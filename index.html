@@ -352,7 +352,7 @@
     this.classList.remove('show');
   });
 
-  // Ghi đè hàm go để bơm History API
+// Ghi đè hàm go để bơm History API và xử lý hiển thị Header
   function go(view, params, pushHistory = true) {
     state.view = view;
     if (params && params.productId !== undefined) state.productId = params.productId;
@@ -360,9 +360,20 @@
     
     // Đổi giao diện Header
     var header = document.getElementById('siteHeader');
+    var cartBtn = document.getElementById('cartBtn');
+    
     if (header) {
       if (view === 'home' || view === 'success') header.classList.remove('sub-page');
       else header.classList.add('sub-page');
+    }
+
+    // Ẩn/Hiện Giỏ hàng
+    if (cartBtn) {
+      if (view === 'checkout' || view === 'success') {
+        cartBtn.style.visibility = 'hidden'; // Giấu đi nhưng vẫn giữ không gian để cân bằng logo
+      } else {
+        cartBtn.style.visibility = 'visible';
+      }
     }
 
     // Nhét trang ảo vào lịch sử để lừa điện thoại
