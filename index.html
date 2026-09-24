@@ -205,6 +205,21 @@
   .fab-messenger { background: linear-gradient(135deg, #00c6ffb8, #0072ffad); }
   .fab-phone { background: linear-gradient(135deg, #00ff14b8, #72b704ad); }
   @media (min-width: 769px) { .fab-btn:hover { transform: scale(1.1); } .fab-toggle:hover { transform: scale(1.05); } }
+/* TỐI ƯU GIAO DIỆN CHO MÀN HÌNH ĐIỆN THOẠI NHỎ (Dưới 480px) */
+  @media (max-width: 480px) {
+    /* Ép lưới sản phẩm luôn hiển thị 2 cột */
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    
+    /* Thu nhỏ chữ logo một chút và cấm xuống dòng */
+    .brand { font-size: 17px; white-space: nowrap; gap: 8px; }
+    
+    /* Bóp lề trái/phải để chừa thêm không gian */
+    .header-inner { padding: 12px 14px; gap: 4px; }
+    .wrap { padding: 0 14px; }
+    
+    /* Thu gọn nút Giỏ hàng */
+    .cart-btn { padding: 8px 12px; font-size: 13px; }
+  }
 </style>
 </head>
 <body>
