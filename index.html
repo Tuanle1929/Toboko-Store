@@ -456,6 +456,27 @@
   window.addEventListener('resize', updateHeaderHeightVar);
   updateHeaderHeightVar();
 
+  // Thanh dưới cùng (bottom-bar) ở trang chi tiết SP là position:fixed trên mobile, nên chiều cao
+  // của nó KHÔNG tự động chừa chỗ trong luồng trang. Chiều cao này lại thay đổi tuỳ nội dung
+  // (banner upsell có thể xuống 1 hoặc 2 dòng) nên không thể đoán trước bằng 1 con số cố định.
+  // => đo chiều cao thực tế của .bottom-bar sau khi render rồi tự set padding-bottom tương ứng
+  // cho .detail, để nội dung phía trên (đặc biệt là khu vực chọn phân loại) luôn kéo xuống được
+  // hết và không bị thanh này che mất.
+  function syncDetailBottomPadding() {
+    var detailEl = document.querySelector('.detail');
+    var bottomBarEl = document.querySelector('.bottom-bar');
+    if (!detailEl || !bottomBarEl) return;
+    if (window.innerWidth <= 768) {
+      detailEl.style.paddingBottom = (bottomBarEl.offsetHeight + 24) + 'px';
+    } else {
+      detailEl.style.paddingBottom = ''; // desktop: bottom-bar không fixed, không cần chừa chỗ
+    }
+  }
+  window.addEventListener('resize', syncDetailBottomPadding);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function() { syncDetailBottomPadding(); });
+  }
+
   function getStock(productName, variantName) {
     var key = productName + '||' + variantName;
     if (state.inventory[key] !== undefined) {
@@ -666,6 +687,7 @@
     html += '<button class="btn" id="addToCartBtn" ' + btnDisable + '>' + btnText + '</button></div></div></div>';
     
     app.innerHTML = html;
+    syncDetailBottomPadding();
 
     var track = document.getElementById('mainCarousel');
     if (track && uniqueImages.length > 1) {
