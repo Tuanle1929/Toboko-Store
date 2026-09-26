@@ -281,6 +281,10 @@
   var LOW_STOCK_THRESHOLD = 10; 
   var DEFAULT_VARIANT_LABEL = 'Mặc định'; 
 
+  // === CẤU HÌNH PHÍ SHIP (cố định, sửa trực tiếp ở đây nếu cần đổi) ===
+  var SHIPPING_FEE = 20000;            // phí ship tạm tính, tính 1 lần / đơn (không nhân theo SL)
+  var SHIPPING_FREE_THRESHOLD = 20;    // tổng SL sản phẩm trong giỏ >= mốc này thì được freeship
+
   function esc(str) {
     return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   }
@@ -288,6 +292,7 @@
   var state = {
     view: 'home', productId: null, selectedVariant: null, qty: 1, cart: [], products: [],          
     productsLoading: true, productsError: false, inventory: {}, lastOrderId: null,
+    lastOrderShippingFee: 0, lastOrderIsFreeship: false,
     discountTiers: [
       { min: 100, max: Infinity, discount: 10000 },
       { min: 50, max: 99, discount: 7000 },
@@ -348,10 +353,35 @@
     return state.cart.reduce(function(s, i) { return s + (i.qty * effectivePrice(i.price)); }, 0); 
   }
 
-  function notifyDiscountChange(oldDiscount) {
+  // === PHÍ SHIP (tạm tính) ===
+  // Freeship khi tổng SL trong giỏ đạt mốc SHIPPING_FREE_THRESHOLD, ngược lại thu SHIPPING_FEE / đơn.
+  function getShippingFee() {
+    return cartTotalQty() >= SHIPPING_FREE_THRESHOLD ? 0 : SHIPPING_FEE;
+  }
+
+  function isFreeship() {
+    return getShippingFee() === 0;
+  }
+
+  // Dòng "Phí ship (tạm tính)" dùng chung cho giỏ hàng / checkout / trang thành công.
+  // fee/free truyền vào để trang thành công vẫn hiển thị đúng sau khi giỏ hàng đã bị xoá.
+  function shippingRowHTML(fee, free) {
+    var valueHtml = free 
+      ? '<span style="color:var(--primary); font-weight:800;">Miễn phí</span>' 
+      : fmt(fee);
+    return '<div class="s-row"><span>Phí ship (tạm tính)</span><span>' + valueHtml + '</span></div>';
+  }
+
+  function notifyDiscountChange(oldDiscount, wasFreeship) {
     var newDiscount = getCurrentDiscount();
+    var nowFreeship = isFreeship();
     if (newDiscount > oldDiscount) {
-      toast('🎉 Tuyệt vời, tất cả sản phẩm trong gian hàng đã giảm ' + (newDiscount/1000) + 'k!');
+      if (!wasFreeship && nowFreeship) {
+        // Vừa đạt mốc freeship VÀ tăng mức giảm giá cùng lúc (mốc 20 hiện tại)
+        toast('🎉 Tuyệt vời! Bạn được Freeship và giảm ' + (newDiscount/1000) + 'k/SP cho toàn bộ gian hàng!');
+      } else {
+        toast('🎉 Tuyệt vời, tất cả sản phẩm trong gian hàng đã giảm ' + (newDiscount/1000) + 'k!');
+      }
     } else if (newDiscount < oldDiscount) {
       var currentQty = cartTotalQty();
       var needed = 0;
@@ -361,7 +391,18 @@
           break;
         }
       }
-      toast('Bạn vừa rời mốc giảm ' + (oldDiscount/1000) + 'k/SP, mua thêm ' + needed + ' sản phẩm để lấy lại ưu đãi nhé!');
+      if (wasFreeship && !nowFreeship) {
+        // Vừa rớt mốc giảm giá VÀ mất luôn freeship cùng lúc
+        toast('Bạn vừa rời mốc giảm ' + (oldDiscount/1000) + 'k/SP và mất luôn ưu đãi freeship, mua thêm ' + needed + ' sản phẩm để lấy lại ưu đãi nhé!');
+      } else {
+        toast('Bạn vừa rời mốc giảm ' + (oldDiscount/1000) + 'k/SP, mua thêm ' + needed + ' sản phẩm để lấy lại ưu đãi nhé!');
+      }
+    } else if (wasFreeship && !nowFreeship) {
+      // Mức giảm giá không đổi (VD vẫn ở khoảng 5-19) nhưng lại mất freeship — hiếm khi xảy ra với cấu hình hiện tại, thêm cho chắc
+      toast('Bạn vừa mất ưu đãi freeship, mua thêm ' + (SHIPPING_FREE_THRESHOLD - cartTotalQty()) + ' sản phẩm để được freeship lại nhé!');
+    } else if (!wasFreeship && nowFreeship) {
+      // Đạt freeship nhưng mức giảm giá không đổi (hiếm khi xảy ra với cấu hình hiện tại)
+      toast('🎉 Tuyệt vời, bạn vừa được Freeship cho đơn hàng này!');
     }
   }
 
@@ -597,9 +638,17 @@
     var upsellHtml = '';
     if (nextTier) {
       var needed = nextTier.min - currentQty;
-var msg = currentQty === 0 
-        ? '🛒 Mua từ <b>' + nextTier.min + '</b> SP để được giảm sỉ <b>' + (nextTier.discount/1000) + 'k/SP</b> toàn bộ gian hàng'
-        : '🛒 Đang có ' + currentQty + ' SP. Thêm <b>' + needed + '</b> SP nữa để được giảm <b>' + (nextTier.discount/1000) + 'k/SP</b> toàn bộ gian hàng!';
+      var willGetFreeship = currentQty < SHIPPING_FREE_THRESHOLD && nextTier.min === SHIPPING_FREE_THRESHOLD;
+      var msg;
+      if (currentQty === 0) {
+        msg = willGetFreeship
+          ? '🛒 Mua từ ' + nextTier.min + ' SP để được Freeship + giảm sỉ ' + (nextTier.discount/1000) + 'k/SP toàn bộ gian hàng'
+          : '🛒 Mua từ ' + nextTier.min + ' SP để được giảm sỉ ' + (nextTier.discount/1000) + 'k/SP toàn bộ gian hàng';
+      } else {
+        msg = willGetFreeship
+          ? '🛒 Thêm ' + needed + ' SP nữa để được Freeship + giảm thêm ' + (nextTier.discount/1000) + 'k/SP toàn bộ gian hàng!'
+          : '🛒 Thêm ' + needed + ' SP nữa để được giảm ' + (nextTier.discount/1000) + 'k/SP toàn bộ gian hàng!';
+      }
       upsellHtml = '<div class="upsell-msg">' + msg + '</div>';
     } else if (currentQty > 0 && getCurrentDiscount() > 0) {
       upsellHtml = '<div class="upsell-msg" style="border-color:transparent;">🎉 Đang hưởng mức giảm sỉ cao nhất!</div>';
@@ -681,6 +730,7 @@ var msg = currentQty === 0
         if (currentCartQty + state.qty > maxStock) return toast('Giỏ hàng của bạn đã có ' + currentCartQty + ' sản phẩm này rồi, kho chỉ còn ' + maxStock + ' thôi ạ');
 
         var oldDiscount = getCurrentDiscount();
+        var wasFreeship = isFreeship();
 
         var finalImg = (p.variantImages && p.variantImages[state.selectedVariant]) || p.image;
         if (existing) existing.qty += state.qty;
@@ -689,8 +739,15 @@ var msg = currentQty === 0
         updateCartBadge(); 
         
         var newDiscount = getCurrentDiscount();
+        var nowFreeship = isFreeship();
         if (newDiscount > oldDiscount) {
-          toast('🎉 Tuyệt vời, tất cả sản phẩm trong gian hàng đã giảm ' + (newDiscount/1000) + 'K!');
+          if (!wasFreeship && nowFreeship) {
+            toast('🎉 Tuyệt vời! Bạn được Freeship và giảm ' + (newDiscount/1000) + 'K/SP cho toàn bộ gian hàng!');
+          } else {
+            toast('🎉 Tuyệt vời, tất cả sản phẩm trong gian hàng đã giảm ' + (newDiscount/1000) + 'K!');
+          }
+        } else if (!wasFreeship && nowFreeship) {
+          toast('🎉 Tuyệt vời, bạn vừa được Freeship cho đơn hàng này!');
         } else {
           toast('Đã thêm vào giỏ hàng'); 
         }
@@ -738,13 +795,16 @@ var msg = currentQty === 0
     
     if (nextTier) {
       var needed = nextTier.min - currentQty;
-      var bannerMsg = 'Mua thêm <b>' + needed + '</b> SP để được giảm <b>' + (nextTier.discount/1000) + 'k/SP</b> toàn bộ gian h!';
-      if (currentDiscount > 0) {
-        bannerMsg = 'Đang giảm ' + (currentDiscount/1000) + 'k/SP. Thêm <b>' + needed + '</b> SP nữa để giảm <b>' + (nextTier.discount/1000) + 'k/SP</b>!';
+      var willGetFreeship = currentQty < SHIPPING_FREE_THRESHOLD && nextTier.min === SHIPPING_FREE_THRESHOLD;
+      var bannerMsg = willGetFreeship
+        ? 'Mua thêm ' + needed + ' SP để được Freeship + giảm thêm ' + (nextTier.discount/1000) + 'k/SP toàn bộ gian hàng!'
+        : 'Mua thêm ' + needed + ' SP để được giảm ' + (nextTier.discount/1000) + 'k/SP toàn bộ gian hàng!';
+      if (currentDiscount > 0 && !willGetFreeship) {
+        bannerMsg = 'Mua thêm ' + needed + ' sản phẩm nữa để có mức giá sỉ tốt hơn nha!';
       }
-      bannerHtml = '<div class="discount-banner"><div class="db-icon">🎁</div><div>' + bannerMsg + '</div></div>';
+      bannerHtml = '<div class="discount-banner"><div class="db-icon"></div><div>' + bannerMsg + '</div></div>';
     } else if (currentDiscount > 0) {
-      bannerHtml = '<div class="discount-banner" style="background:#fff0f6; border-color:#ffcce0;"><div class="db-icon">🎉</div><div style="color:#EA75A2;">Tuyệt vời! Bạn đang hưởng mức giảm giá sỉ cao nhất (giảm <b>' + (currentDiscount/1000) + 'k/SP</b>)!</div></div>';
+      bannerHtml = '<div class="discount-banner" style="background:#fff0f6; border-color:#ffcce0;"><div class="db-icon">🎉</div><div style="color:#EA75A2;">Tuyệt vời! Bạn đang hưởng mức giảm giá sỉ cao nhất !</div></div>';
     }
 
     var html = '';
@@ -752,8 +812,8 @@ var msg = currentQty === 0
       var thumbContent = item.image ? '<img src="' + esc(item.image) + '" style="width:100%;height:100%;object-fit:cover;">' : esc(item.emoji);
       var maxStock = getStock(item.name, item.variant);
       
-      var originalLineTotal = item.price * item.qty;
-      var finalLineTotal = effectivePrice(item.price) * item.qty;
+      var originalLineTotal = item.price;
+      var finalLineTotal = effectivePrice(item.price);
       var priceHtml = (finalLineTotal < originalLineTotal)
         ? '<div style="text-align:right;"><div class="price-old" style="font-size:11.5px; margin-right:0; display:block;">' + fmt(originalLineTotal) + '</div><span class="ci-price">' + fmt(finalLineTotal) + '</span></div>'
         : '<span class="ci-price">' + fmt(finalLineTotal) + '</span>';
@@ -774,6 +834,7 @@ var msg = currentQty === 0
       
       row.querySelector('.mq-input').addEventListener('change', function () {
         var oldDiscount = getCurrentDiscount();
+        var wasFreeship = isFreeship();
         var val = parseInt(this.value, 10);
         var maxStock = getStock(item.name, item.variant);
         if (isNaN(val) || val < 1) val = 1;
@@ -781,17 +842,18 @@ var msg = currentQty === 0
         item.qty = val;
         updateCartBadge(); 
         renderDrawer();
-        notifyDiscountChange(oldDiscount);
+        notifyDiscountChange(oldDiscount, wasFreeship);
       });
 
       row.querySelector('.mq-plus').addEventListener('click', function () {
         var oldDiscount = getCurrentDiscount();
+        var wasFreeship = isFreeship();
         var maxStock = getStock(item.name, item.variant);
         if (item.qty < maxStock) { 
           item.qty++; 
           updateCartBadge(); 
           renderDrawer(); 
-          notifyDiscountChange(oldDiscount);
+          notifyDiscountChange(oldDiscount, wasFreeship);
         } else { 
           toast('Dạ kho chỉ còn tối đa ' + maxStock + ' sản phẩm thôi ạ'); 
         }
@@ -799,32 +861,37 @@ var msg = currentQty === 0
       
       row.querySelector('.mq-minus').addEventListener('click', function () {
         var oldDiscount = getCurrentDiscount();
+        var wasFreeship = isFreeship();
         item.qty--; 
         if (item.qty <= 0) state.cart = state.cart.filter(function(i) { return i.key !== key; }); 
         updateCartBadge(); 
         renderDrawer();
-        notifyDiscountChange(oldDiscount);
+        notifyDiscountChange(oldDiscount, wasFreeship);
       });
       
       row.querySelector('.remove-btn').addEventListener('click', function () {
         var oldDiscount = getCurrentDiscount();
+        var wasFreeship = isFreeship();
         state.cart = state.cart.filter(function(i) { return i.key !== key; }); 
         updateCartBadge(); 
         renderDrawer();
-        notifyDiscountChange(oldDiscount);
+        notifyDiscountChange(oldDiscount, wasFreeship);
       });
     });
 
     var rawSubtotal = state.cart.reduce(function(s, i) { return s + i.price * i.qty; }, 0);
     var finalTotal = cartTotal();
     var discountTotal = rawSubtotal - finalTotal;
+    var shippingFee = getShippingFee();
+    var grandTotal = finalTotal + shippingFee;
     
     var footHtml = '';
     footHtml += '<div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px; color:var(--text);"><span>Tạm tính</span><span>' + fmt(rawSubtotal) + '</span></div>';
     if (discountTotal > 0) {
-      footHtml += '<div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px; color:var(--danger); font-weight:600;"><span>Giảm giá sỉ</span><span>- ' + fmt(discountTotal) + '</span></div>';
+      footHtml += '<div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px; color:var(--text);"><span>Giảm giá sỉ</span><span>- ' + fmt(discountTotal) + '</span></div>';
     }
-    footHtml += '<div style="display:flex; justify-content:space-between; font-weight:800; font-size:17px; margin-bottom:14px; border-top:1px dashed var(--border); padding-top:10px;"><span>Tổng thanh toán</span><span style="color:var(--primary);">' + fmt(finalTotal) + '</span></div>';
+    footHtml += '<div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px; color:var(--text);"><span>Phí ship (tạm tính)</span><span>' + (isFreeship() ? '<span style="color:var(--primary); font-weight:800;">Miễn phí</span>' : fmt(shippingFee)) + '</span></div>';
+    footHtml += '<div style="display:flex; justify-content:space-between; font-weight:800; font-size:17px; margin-bottom:14px; border-top:1px dashed var(--border); padding-top:10px;"><span>Tổng thanh toán</span><span style="color:var(--primary);">' + fmt(grandTotal) + '</span></div>';
     footHtml += '<button class="btn block" id="checkoutBtn">Tiếp tục thanh toán</button>';
     
     document.getElementById('drawerFoot').innerHTML = footHtml;
@@ -841,9 +908,9 @@ var msg = currentQty === 0
     state.cart.forEach(function (i) {
       var variantLine = i.variant === DEFAULT_VARIANT_LABEL ? '' : ('<span class="s-variant">Phân loại: ' + esc(i.variant) + '</span>');
       
-      var originalLineTotal = i.price * i.qty;
-      var finalLineTotal = effectivePrice(i.price) * i.qty;
-      rawSubtotal += originalLineTotal;
+      var originalLineTotal = i.price;
+      var finalLineTotal = effectivePrice(i.price);
+      rawSubtotal += originalLineTotal * i.qty;
       
       var priceHtml = (finalLineTotal < originalLineTotal) 
         ? '<span class="price-old">' + fmt(originalLineTotal) + '</span><span style="color:var(--text); font-weight:700;">' + fmt(finalLineTotal) + '</span>'
@@ -860,15 +927,19 @@ var msg = currentQty === 0
 
     var finalTotal = cartTotal();
     var discountTotal = rawSubtotal - finalTotal;
+    var shippingFee = getShippingFee();
+    var grandTotal = finalTotal + shippingFee;
 
     html += '<div style="border-top: 1px dashed var(--border); margin-top: 12px; padding-top: 12px;"></div>';
     html += '<div class="s-row"><span>Tạm tính</span><span>' + fmt(rawSubtotal) + '</span></div>';
     
     if (discountTotal > 0) {
-      html += '<div class="s-row" style="color:var(--danger); font-weight:600;"><span>Giảm giá sỉ</span><span>- ' + fmt(discountTotal) + '</span></div>';
+      html += '<div class="s-row" style="color:var(--text);"><span>Giảm giá sỉ</span><span>- ' + fmt(discountTotal) + '</span></div>';
     }
+
+    html += shippingRowHTML(shippingFee, isFreeship());
     
-    html += '<div class="s-row s-total"><span>Tổng thanh toán</span><span>' + fmt(finalTotal) + '</span></div></div>';
+    html += '<div class="s-row s-total"><span>Tổng thanh toán</span><span>' + fmt(grandTotal) + '</span></div></div>';
     
     html += '<div class="field"><label>Họ và tên *</label><input type="text" id="fName" placeholder="Tên người nhận"></div>';
     html += '<div class="field"><label>Số điện thoại *</label><input type="tel" id="fPhone" placeholder="09xx xxx xxx"></div>';
@@ -902,13 +973,20 @@ var msg = currentQty === 0
         btn.textContent = 'Đang xử lý...';
         var orderId = 'TBK' + Date.now().toString(36).toUpperCase();
         var orderedItems = state.cart.map(function(i) { return { name: i.name, variant: i.variant, qty: i.qty, price: i.price, finalPrice: effectivePrice(i.price) }; });
+        // Chốt trạng thái/số tiền ship NGAY TẠI ĐÂY, vì sau khi đặt hàng xong giỏ hàng sẽ bị xoá
+        // và không thể tính lại cartTotalQty() cho trang thành công nữa.
+        var shippingFeeAtOrder = getShippingFee();
+        var isFreeshipAtOrder = isFreeship();
+        var shippingStatus = isFreeshipAtOrder ? 'Freeship' : 'Khách trả ship';
         
         fetch(WEB_APP_URL, {
-          method: 'POST', body: JSON.stringify({ orderId: orderId, customerName: n, phone: phoneDigits, address: a, note: document.getElementById('fNote').value, items: orderedItems, total: cartTotal(), createdAt: new Date().toLocaleString('vi-VN') })
+          method: 'POST', body: JSON.stringify({ orderId: orderId, customerName: n, phone: phoneDigits, address: a, note: document.getElementById('fNote').value, items: orderedItems, total: cartTotal(), shippingStatus: shippingStatus, shippingFee: shippingFeeAtOrder, createdAt: new Date().toLocaleString('vi-VN') })
         }).then(function(res) { return res.json(); })
           .then(function(result) {
             if (!result || result.success !== true) throw new Error(result && result.error ? result.error : 'Server từ chối đơn hàng');
-            state.lastOrderId = orderId; state.lastOrderItems = orderedItems; state.lastOrderTotal = cartTotal(); state.cart = []; updateCartBadge(); go('success');
+            state.lastOrderId = orderId; state.lastOrderItems = orderedItems; state.lastOrderTotal = cartTotal();
+            state.lastOrderShippingFee = shippingFeeAtOrder; state.lastOrderIsFreeship = isFreeshipAtOrder;
+            state.cart = []; updateCartBadge(); go('success');
           })
           .catch(function() { btn.disabled = false; btn.textContent = 'Hoàn tất đặt hàng'; toast('Đặt hàng chưa thành công, bạn thử lại giúp mình nhé 🙏'); });
       });
@@ -922,9 +1000,9 @@ var msg = currentQty === 0
     (state.lastOrderItems || []).forEach(function (i) {
       var variantLabel = i.variant === DEFAULT_VARIANT_LABEL ? '' : ('<div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Phân loại: ' + esc(i.variant) + '</div>');
       
-      var originalLineTotal = i.price * i.qty;
-      var finalLineTotal = i.finalPrice * i.qty;
-      rawSubtotal += originalLineTotal;
+      var originalLineTotal = i.price;
+      var finalLineTotal = i.finalPrice;
+      rawSubtotal += originalLineTotal * i.qty;
 
       var priceHtml = (finalLineTotal < originalLineTotal) 
         ? '<span class="price-old">' + fmt(originalLineTotal) + '</span><span style="color:var(--text); font-weight:700;">' + fmt(finalLineTotal) + '</span>'
@@ -941,6 +1019,8 @@ var msg = currentQty === 0
 
     var finalTotal = state.lastOrderTotal || 0;
     var discountTotal = rawSubtotal - finalTotal;
+    var shippingFee = state.lastOrderShippingFee || 0;
+    var grandTotal = finalTotal + shippingFee;
 
     var summaryHtml = '';
     if (itemsHtml) {
@@ -948,9 +1028,10 @@ var msg = currentQty === 0
       summaryHtml += '<div style="border-top: 1px dashed var(--border); margin-top: 12px; padding-top: 12px;"></div>';
       summaryHtml += '<div class="s-row"><span>Tạm tính</span><span>' + fmt(rawSubtotal) + '</span></div>';
       if (discountTotal > 0) {
-        summaryHtml += '<div class="s-row" style="color:var(--danger); font-weight:600;"><span>Giảm giá sỉ</span><span>- ' + fmt(discountTotal) + '</span></div>';
+        summaryHtml += '<div class="s-row" style="color:var(--text);"><span>Giảm giá sỉ</span><span>- ' + fmt(discountTotal) + '</span></div>';
       }
-      summaryHtml += '<div class="s-row s-total"><span>Tổng thanh toán</span><span>' + fmt(finalTotal) + '</span></div></div>';
+      summaryHtml += shippingRowHTML(shippingFee, state.lastOrderIsFreeship);
+      summaryHtml += '<div class="s-row s-total"><span>Tổng thanh toán</span><span>' + fmt(grandTotal) + '</span></div></div>';
     }
     
     var copyBtnSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
