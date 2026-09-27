@@ -76,39 +76,50 @@
   .card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
   .thumb { position: relative; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 54px; overflow: hidden; background: #fdfafc; }
 
-  /* Tag HOT / Bestseller ở góc trên bên phải ảnh: hiệu ứng gương đục (frosted glass) mềm mại */
-  .thumb-tags, .card-badges {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-    z-index: 5;
-    pointer-events: none;
-  }
-  .badge-tag, .card-badges > span, .card-badge {
-    padding: 2.5px 8px;
+  /* Pill Hot: hiển thị cạnh tên sản phẩm */
+  .tag-hot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(239, 77, 107, 0.14);
+    color: #d82b4a;
+    border: 1px solid rgba(239, 77, 107, 0.35);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     border-radius: 999px;
-    font-size: 9.5px;
-    font-weight: 600;
+    font-size: 10px;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    line-height: 1.25;
-    backdrop-filter: blur(8px) saturate(160%);
-    -webkit-backdrop-filter: blur(8px) saturate(160%);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    line-height: 1;
+    padding: 2.5px 7px;
+    margin-right: 6px;
+    vertical-align: middle;
   }
-  .badge-hot {
-    background: rgba(255, 238, 244, 0.68);
-    color: #9f2461;
-    border: 1px solid rgba(255, 255, 255, 0.6);
-  }
-  .badge-bestseller {
-    background: rgba(255, 248, 235, 0.68);
-    color: #8c531b;
-    border: 1px solid rgba(255, 255, 255, 0.6);
+
+  /* Ribbon Bestseller: ruy băng chéo góc trên bên trái ảnh */
+  .ribbon-bestseller {
+    position: absolute;
+    top: 12px;
+    left: -30px;
+    width: 125px;
+    transform: rotate(-45deg);
+    text-align: center;
+    padding: 3.5px 0;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #fff;
+    background: rgba(160, 48, 140, 0.82);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-top: 1px solid rgba(255, 255, 255, 0.45);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 2px 8px rgba(78, 2, 47, 0.2);
+    z-index: 5;
+    pointer-events: none;
+    line-height: 1.2;
   }
 
   .card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; }
@@ -187,6 +198,19 @@
   /* Nút mũi tên qua/lại carousel — chỉ hiện trên Desktop (xem media query bên dưới) */
   .carousel-arrow { display: none; }
 
+  .variant-preview { display: flex; align-items: center; gap: 10px; background: var(--bg); border-radius: 14px; padding: 8px; margin-bottom: 12px; cursor: pointer; transition: opacity 0.15s; user-select: none; }
+  .variant-preview:active { opacity: 0.7; }
+  .preview-thumb { width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0; overflow: hidden; border: 1px solid var(--border); background: var(--surface); }
+  .preview-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .preview-text { min-width: 0; }
+  .preview-text b { display: block; font-size: 17px; font-weight: 800; }
+  .preview-text span { display: block; font-size: 19px; color: var(--text-muted); margin-top: 1px; }
+  .preview-empty { font-size: 12.5px; color: var(--text-muted); padding: 4px 6px; }
+
+  @media (max-width: 768px) {
+    .variant-preview { position: sticky; top: var(--header-h); z-index: 30; box-shadow: 3px 7px 16px 0px rgb(56 0 78 / 16%); }
+  }
+
   @media (min-width: 769px) {
     /* Vấn đề 1: neo ảnh cố định khi cuộn cột thông tin bên phải */
     .carousel { position: sticky; top: calc(var(--header-h) + 20px); align-self: start; }
@@ -216,18 +240,6 @@
   .detail .desc { color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; font-size: 14px; white-space: pre-wrap; }
   .variant-group { margin-bottom: 24px; }
   .variant-group .label { font-weight: 700; font-size: 13px; margin-bottom: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;}
-
-  .variant-preview { display: flex; align-items: center; gap: 10px; background: var(--bg); border-radius: 14px; padding: 8px; margin-bottom: 12px; cursor: pointer; transition: opacity 0.15s; user-select: none; }
-  .variant-preview:active { opacity: 0.7; }
-  .preview-thumb { width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0; overflow: hidden; border: 1px solid var(--border); background: var(--surface); }
-  .preview-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .preview-text { min-width: 0; }
-  .preview-text b { display: block; font-size: 17px; font-weight: 800; }
-  .preview-text span { display: block; font-size: 19px; color: var(--text-muted); margin-top: 1px; }
-  .preview-empty { font-size: 12.5px; color: var(--text-muted); padding: 4px 6px; }
-  @media (max-width: 768px) {
-    .variant-preview { position: sticky; top: var(--header-h); z-index: 30; box-shadow:3px 7px 16px 0px rgb(56 0 78 / 16%); }
-  }
 
   .pill-row { display: flex; flex-wrap: wrap; gap: 10px; }
   .pill { border: 1.5px solid var(--border); background: var(--surface); padding: 10px 18px; border-radius: 12px; font-weight: 600; font-size: 14px; transition: all .15s; color: var(--text); }
@@ -380,7 +392,6 @@
   /* Giao diện giá khuyến mãi & Upsell Banner */
   .price-old { text-decoration: line-through; color: var(--text-muted); font-size: 0.85em; margin-right: 6px; font-weight: 600; opacity: 0.7;}
   .price-new { color: var(--primary); font-weight: inherit; }
-  .db-icon { font-size: 24px; line-height: 1;}
 
   /* Toast & Loader */
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 12px 20px; border-radius: 999px; font-weight: 600; font-size: 13px; z-index: 100; opacity: 0; transition: opacity .2s; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
@@ -719,22 +730,23 @@
     return p;
   }
 
-  // === TAG HOT / BESTSELLER Ở GÓC TRÊN BÊN PHẢI ẢNH ===
-  function cardThumbTagsHTML(p) {
-    var tagBadges = '';
-    if (Array.isArray(p.tags)) {
-      p.tags.forEach(function(tag) {
-        var tLower = String(tag).trim().toLowerCase();
-        if (tLower === 'hot') {
-          tagBadges += '<span class="badge-tag badge-hot">Hot</span>';
-        } else if (tLower === 'bestseller' || tLower === 'best seller') {
-          tagBadges += '<span class="badge-tag badge-bestseller">Bestseller</span>';
-        } else if (tag && tag.trim()) {
-          tagBadges += '<span class="badge-tag badge-hot">' + esc(tag.trim()) + '</span>';
-        }
-      });
-    }
-    return tagBadges ? ('<div class="thumb-tags card-badges">' + tagBadges + '</div>') : '';
+  // === RIBBON BESTSELLER (CHÉO GÓC TRÁI ẢNH) ===
+  function cardRibbonBestsellerHTML(p) {
+    if (!Array.isArray(p.tags)) return '';
+    var hasBestseller = p.tags.some(function(t) {
+      var tLower = String(t).trim().toLowerCase();
+      return tLower === 'bestseller' || tLower === 'best seller';
+    });
+    return hasBestseller ? '<div class="ribbon-bestseller">Bestseller</div>' : '';
+  }
+
+  // === PILL HOT (NẰM CHUNG DÒNG VỚI TÊN SẢN PHẨM) ===
+  function cardHotPillHTML(p) {
+    if (!Array.isArray(p.tags)) return '';
+    var hasHot = p.tags.some(function(t) {
+      return String(t).trim().toLowerCase() === 'hot';
+    });
+    return hasHot ? '<span class="tag-hot">Hot</span>' : '';
   }
 
   function getProductTotalStock(p) {
@@ -1007,10 +1019,10 @@
         html += '<div class="card' + (isOOS ? ' card-oos' : '') + '" data-id="' + esc(p.name) + '">' +
                   '<div class="thumb" style="background:' + esc(p.color) + '">' +
                     thumbContent +
-                    cardThumbTagsHTML(p) +
+                    cardRibbonBestsellerHTML(p) +
                   '</div>' +
                   '<div class="card-body">' +
-                    '<p class="name">' + esc(p.name) + '</p>' +
+                    '<p class="name">' + cardHotPillHTML(p) + esc(p.name) + '</p>' +
                     '<div class="card-footer-row">' +
                       '<div class="price" data-price-id="' + esc(p.name) + '">' + priceHTML(p.price) + '</div>' +
                       cardStockInlineHTML(p) +
