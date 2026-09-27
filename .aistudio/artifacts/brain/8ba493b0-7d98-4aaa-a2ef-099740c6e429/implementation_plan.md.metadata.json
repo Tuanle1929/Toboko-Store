@@ -1,0 +1,6 @@
+{
+  "summary":  "Kế hoạch tối ưu danh sách sản phẩm:\n1. Tự động đẩy sản phẩm hết hàng xuống cuối danh sách.\n2. Dời hiển thị tồn kho (SL xxxx / Hết hàng) từ góc ảnh xuống ngang hàng giá tiền, căn lề phải, giữ nguyên vị trí ổn định khi áp dụng giá sỉ.\n3. Thiết kế lại tag HOT theo phong cách hồng pastel dịu nhẹ, tinh tế, không chói mắt.",
+  "updatedAt":  "2026-09-27T12:23:58.506557218Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

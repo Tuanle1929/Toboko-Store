@@ -1,0 +1,8 @@
+{
+  "name": "Toboko Store",
+  "description": "Toboko - Shop Mi Giả Chính Hãng. Hơn 300+ mã mi giả và phụ kiện làm đẹp.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
