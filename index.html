@@ -73,13 +73,39 @@
   @media (max-width: 768px) { .detail { grid-template-columns: 1fr; gap: 20px; padding-bottom: 80px; } }
   
   .carousel { position: relative; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--border); background: #fff; aspect-ratio: 1/1; }
-  .carousel-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -ms-overflow-style: none; width: 100%; height: 100%; }
+  .carousel-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -ms-overflow-style: none; width: 100%; height: 100%; scroll-behavior: smooth; }
   .carousel-track::-webkit-scrollbar { display: none; }
   .carousel-item { flex: 0 0 100%; scroll-snap-align: start; display: flex; align-items: center; justify-content: center; font-size: 100px; }
   .carousel-item img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
   .carousel-dots { position: absolute; bottom: 16px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.6); border: 1px solid rgba(0,0,0,0.15); transition: 0.2s; }
   .dot.active { background: var(--primary); transform: scale(1.2); }
+
+  /* Nút mũi tên qua/lại carousel — chỉ hiện trên Desktop (xem media query bên dưới) */
+  .carousel-arrow { display: none; }
+
+  @media (min-width: 769px) {
+    /* Vấn đề 1: neo ảnh cố định khi cuộn cột thông tin bên phải */
+    .carousel { position: sticky; top: calc(var(--header-h) + 20px); align-self: start; }
+
+    /* Vấn đề 2: nút mũi tên qua/lại + con trỏ gợi ý bấm để xem Full */
+    .carousel-arrow {
+      display: flex; align-items: center; justify-content: center;
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(255,255,255,0.92); border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm); cursor: pointer; z-index: 10;
+      font-size: 18px; color: var(--text); transition: opacity .15s, background .15s;
+    }
+    .carousel-arrow:hover { background: #fff; }
+    .carousel-arrow.disabled { opacity: 0.35; pointer-events: none; }
+    .carousel-arrow-prev { left: 12px; }
+    .carousel-arrow-next { right: 12px; }
+    .carousel-item { cursor: zoom-in; }
+
+    /* Vấn đề 3: ô "Phân loại" nhỏ dư thừa trên Desktop vì đã có ảnh to bên trái */
+    .variant-preview { display: none; }
+  }
 
   .detail h2 { font-size: 22px; margin: 0 0 10px; letter-spacing: -0.5px; line-height: 1.3;}
   .detail .price-big { font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 16px; }
@@ -119,7 +145,7 @@
   .stock-info.low { color: #EA75A2; background: #fffaff; }
 
   /* Thanh tiến trình mốc giảm giá / freeship — dùng chung cho trang chi tiết SP và giỏ hàng */
-  .tier-progress { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; box-shadow: var(--shadow-sm); }
+  .tier-progress { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; box-shadow: -2px 5px 11px 2px rgba(103, 52, 123, 0.08); }
   .tier-progress-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
   .tier-progress-icon { font-size: 15px; line-height: 1.4; flex-shrink: 0; }
   .tier-progress-text { font-size: 12.5px; color: var(--text); line-height: 1.4; flex: 1; }
@@ -138,9 +164,29 @@
     .bottom-bar .tier-progress { flex: 0 0 100%; margin-bottom: 0; order: -1; }
   }
   @media (min-width: 769px) { 
-    .bottom-bar { margin-top: 30px; display: flex; flex-direction: column; gap: 20px; align-items: flex-start;} 
-    .bottom-bar .qty-row { margin-bottom: 0; } 
-    .bottom-bar .btn { width: 100%; } 
+    .bottom-bar { 
+      margin-top: 20px; 
+      display: grid; 
+      grid-template-columns: auto 1fr; /* Chia 2 cột: Số lượng (vừa đủ), Nút Mua (chiếm phần còn lại) */
+      gap: 16px 24px; /* Khoảng cách: 16px dòng, 24px cột */
+      align-items: center; /* Canh giữa 2 khối theo chiều dọc */
+      position: sticky; /* Neo cố định ở dưới */
+      bottom: 0; 
+      background: var(--bg); 
+      padding: 20px 0; 
+      z-index: 40; 
+    } 
+    .bottom-bar .tier-progress { 
+      grid-column: 1 / -1; /* Yêu cầu khối tiến trình trải dài toàn bộ chiều ngang */
+      margin-bottom: 0; 
+    }
+    .bottom-bar .qty-row { 
+      margin-bottom: 0; 
+    } 
+    .bottom-bar .btn { 
+      width: 100%; 
+      margin: 0; /* Bỏ margin thừa để nút đều và đẹp */
+    } 
   }
 
   .btn { border: none; border-radius: 999px; padding: 16px 26px; font-weight: 700; font-size: 15px; color: white; background: var(--toboko-gradient); box-shadow: 5px 6px 9px 0px rgba(196, 65, 141, 0.25); width: 100%; transition: transform .1s; }
@@ -710,6 +756,9 @@
         carouselHtml += '<div class="dot ' + (idx === 0 ? 'active' : '') + '" id="dot-' + idx + '"></div>';
       });
       carouselHtml += '</div>';
+      // Nút mũi tên qua/lại — CSS tự ẩn trên Mobile, chỉ hiện trên Desktop
+      carouselHtml += '<div class="carousel-arrow carousel-arrow-prev disabled" id="carouselPrev">‹</div>';
+      carouselHtml += '<div class="carousel-arrow carousel-arrow-next" id="carouselNext">›</div>';
     }
     carouselHtml += '</div>'; 
 
@@ -771,12 +820,48 @@
     syncDetailBottomPadding();
 
     var track = document.getElementById('mainCarousel');
+    var isDesktop = window.matchMedia('(min-width: 769px)').matches;
+
+    function updateCarouselArrows() {
+      if (!track) return;
+      var prevBtn = document.getElementById('carouselPrev');
+      var nextBtn = document.getElementById('carouselNext');
+      if (!prevBtn || !nextBtn) return;
+      var maxScroll = track.scrollWidth - track.clientWidth;
+      prevBtn.classList.toggle('disabled', track.scrollLeft <= 4);
+      nextBtn.classList.toggle('disabled', track.scrollLeft >= maxScroll - 4);
+    }
+
     if (track && uniqueImages.length > 1) {
       track.addEventListener('scroll', function() {
         var index = Math.round(track.scrollLeft / track.clientWidth);
         document.querySelectorAll('.dot').forEach(function(d) { d.classList.remove('active'); });
         var activeDot = document.getElementById('dot-' + index);
         if (activeDot) activeDot.classList.add('active');
+        updateCarouselArrows();
+      });
+
+      // Vấn đề 2: nút mũi tên qua/lại (chỉ hiện & hoạt động ý nghĩa trên Desktop, CSS đã ẩn trên Mobile)
+      var prevBtn = document.getElementById('carouselPrev');
+      var nextBtn = document.getElementById('carouselNext');
+      if (prevBtn) prevBtn.addEventListener('click', function() { track.scrollBy({ left: -track.clientWidth, behavior: 'smooth' }); });
+      if (nextBtn) nextBtn.addEventListener('click', function() { track.scrollBy({ left: track.clientWidth, behavior: 'smooth' }); });
+      updateCarouselArrows();
+    }
+
+    // Vấn đề 2: bấm trực tiếp vào ảnh trong carousel để xem Full HD — CHỈ trên Desktop.
+    // Mobile giữ nguyên hành vi cũ (chỉ vuốt, không bấm ảnh để zoom).
+    if (isDesktop) {
+      app.querySelectorAll('.carousel-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+          var img = item.querySelector('img');
+          if (img) {
+            var popup = document.getElementById('imgPopup');
+            document.getElementById('popupImg').src = img.src;
+            popup.classList.add('show');
+            document.body.style.overflow = 'hidden';
+          }
+        });
       });
     }
 
@@ -789,6 +874,22 @@
         renderDetail(); 
       });
     });
+
+    // Vấn đề 3: chọn phân loại → tự động cuộn carousel tới đúng ảnh của phân loại đó — CHỈ trên Desktop.
+    // Mobile giữ nguyên: carousel không tự cuộn, khách xem ảnh phân loại qua ô preview nhỏ như cũ.
+    if (isDesktop && track && state.selectedVariant) {
+      var targetImgForScroll = variantImage(p, state.selectedVariant);
+      if (targetImgForScroll) {
+        var targetIdx = uniqueImages.indexOf(targetImgForScroll);
+        if (targetIdx > 0) {
+          track.scrollLeft = targetIdx * track.clientWidth;
+          document.querySelectorAll('.dot').forEach(function(d) { d.classList.remove('active'); });
+          var targetDot = document.getElementById('dot-' + targetIdx);
+          if (targetDot) targetDot.classList.add('active');
+          updateCarouselArrows();
+        }
+      }
+    }
 
     var previewBlock = document.getElementById('variantPreview');
     if (previewBlock && state.selectedVariant) {
@@ -935,13 +1036,14 @@
         notifyDiscountChange(oldDiscount, wasFreeship);
       });
 
-      row.querySelector('.mq-plus').addEventListener('click', function () {
+row.querySelector('.mq-plus').addEventListener('click', function () {
         var oldDiscount = getCurrentDiscount();
         var wasFreeship = isFreeship();
         var maxStock = getStock(item.name, item.variant);
         if (item.qty < maxStock) { 
           item.qty++; 
           state.cartBannerQty = cartTotalQty();
+          updateCartBadge(); // <--- THÊM DÒNG NÀY VÀO ĐÂY
           renderDrawer(); 
           notifyDiscountChange(oldDiscount, wasFreeship);
         } else { 
