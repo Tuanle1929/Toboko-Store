@@ -1,6 +1,6 @@
 {
-  "summary":  "Kế hoạch hoàn thiện giao diện Header và bổ sung nút Mua ngay (Thanh toán trực tiếp) trên trang Chi tiết sản phẩm di động.",
-  "updatedAt":  "2026-09-27T16:15:32.761836933Z",
+  "summary":  "Kế hoạch tích hợp Bottom Sheet chọn phân loại chuẩn phong cách Shopee / TikTok Shop trên điện thoại di động: trượt từ đáy màn hình lên, hiển thị thumbnail ảnh phân loại, giá, tồn kho, danh sách mã cuộn mượt và nút chốt đơn tức thì.",
+  "updatedAt":  "2026-09-27T19:22:26.758438363Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

@@ -88,11 +88,11 @@
   .card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; }
   .card-body .name { font-weight: 600; font-size: 14px; margin: 0 0 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; min-height: 2.8em; }
 
-  .card-footer-row { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; margin-top: auto; width: 100%; }
-  .card-body .price { color: var(--primary); font-weight: 800; font-size: 16px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px; line-height: 1.2; min-width: 0; }
-  .price-old { font-size: 12px; color: var(--text-muted); font-weight: 500; text-decoration: line-through; opacity: 0.85; }
-  .price-new { color: var(--accent); font-weight: 800; font-size: 16px; }
-  .card-stock-text { margin-left: auto; font-size: 8px; color: var(--text-muted); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -0.2px; flex-shrink: 0; opacity: 0.75; line-height: 1.2; }
+  .card-footer-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; margin-top: auto; width: 100%; min-height: 34px; }
+  .card-body .price { color: var(--primary); font-weight: 800; font-size: 16px; display: flex; flex-direction: column; justify-content: flex-end; line-height: 1.2; min-width: 0; }
+  .card-body .price .price-old { font-size: 11.5px; color: var(--text-muted); font-weight: 500; text-decoration: line-through; opacity: 0.85; margin-bottom: 1px; margin-right: 0; }
+  .card-body .price .price-new { color: var(--accent); font-weight: 800; font-size: 16px; }
+  .card-stock-text { margin-left: auto; font-size: 8.5px; color: var(--text-muted); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -0.2px; flex-shrink: 0; opacity: 0.75; line-height: 1.2; padding-bottom: 1px; }
   .card-stock-text.oos { color: #e05260; font-weight: 600; opacity: 0.95; font-size: 10px; }
   .card.card-oos { animation-name: fadeUpOos; }
   .card.card-oos:hover { opacity: 0.95; }
@@ -136,8 +136,18 @@
 
   .detail h2 { font-size: 22px; margin: 0 0 10px; letter-spacing: -0.5px; line-height: 1.3;}
   .detail .price-big { font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 16px; }
-  .detail .desc { color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; font-size: 14px; white-space: pre-wrap; }
-  .variant-group { margin-bottom: 24px; }
+  .desc-wrap { margin-bottom: 20px; }
+  .desc-text { color: var(--text-muted); line-height: 1.6; font-size: 14px; white-space: pre-wrap; margin: 0; transition: max-height 0.3s ease; overflow: hidden; }
+  .desc-text.clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .desc-toggle-btn { display: inline-flex; align-items: center; gap: 4px; background: none; border: none; color: var(--primary); font-size: 13px; font-weight: 700; padding: 6px 0 0; cursor: pointer; text-decoration: none; }
+  .desc-toggle-btn:active { opacity: 0.7; }
+  .variant-group { margin-bottom: 24px; border-radius: 12px; padding: 8px; margin-left: -8px; margin-right: -8px; transition: background 0.3s; }
+  @keyframes pulseHighlight {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234, 117, 162, 0.4); background: var(--bg); }
+    50% { transform: scale(1.02); box-shadow: 0 0 0 6px rgba(234, 117, 162, 0); background: #fff0f6; }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234, 117, 162, 0); background: transparent; }
+  }
+  .pulse-highlight { animation: pulseHighlight 0.6s ease-out; }
   .variant-group .label { font-weight: 700; font-size: 13px; margin-bottom: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;}
   .pill-row { display: flex; flex-wrap: wrap; gap: 10px; }
   .pill { border: 1.5px solid var(--border); background: var(--surface); padding: 10px 18px; border-radius: 12px; font-weight: 600; font-size: 14px; transition: all .15s; color: var(--text); }
@@ -154,7 +164,9 @@
   .stock-info { font-size: 12px; color: var(--text); font-weight: 600; background: var(--surface); padding: 4px 10px; border-radius: 999px;}
   .stock-info.low { color: #EA75A2; background: #fffaff; }
 
-  .tier-progress { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; box-shadow: var(--shadow-sm); }
+  .tier-progress-wrapper { width: 100%; overflow: hidden; max-height: 90px; opacity: 1; transform: translateY(0); transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, margin-bottom 0.3s ease, transform 0.3s ease; margin-bottom: 8px; }
+  .tier-progress-wrapper.collapsed { max-height: 0; opacity: 0; margin-bottom: 0 !important; transform: translateY(-6px); pointer-events: none; }
+  .tier-progress { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; box-shadow: var(--shadow-sm); }
   .tier-progress-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
   .tier-progress-icon { font-size: 15px; line-height: 1.4; flex-shrink: 0; }
   .tier-progress-text { font-size: 12.5px; color: var(--text); line-height: 1.4; flex: 1; }
@@ -166,18 +178,19 @@
   @keyframes progressShimmer { 100% { left: 200%; } }
   .tier-progress-max { background: #fff0f6; border-color: #ffcce0; }
 
+  .bottom-action-row { display: flex; align-items: center; gap: 10px; width: 100%; flex-wrap: nowrap; }
+  .bottom-action-row .qty-control { flex-shrink: 0; }
+  .bottom-action-row .btn { flex: 1; min-width: 0; margin: 0; white-space: nowrap; }
+
   @media (max-width: 768px) {
-    .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(253, 250, 252, 0.85); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 24px rgba(78, 2, 47, 0.08); display: flex; align-items: center; justify-content: space-between; gap: 12px; z-index: 50; border-top: 1px solid rgba(196, 65, 141, 0.15); flex-wrap: wrap; }
-    .bottom-bar .qty-label { display: none; } 
-    .bottom-bar .qty-row { margin-bottom: 0; flex: 0 0 auto; }
-    .bottom-bar .btn { margin: 0; flex: 1; padding: 14px 16px; white-space: nowrap; }
-    .bottom-bar .tier-progress { flex: 0 0 100%; margin-bottom: 0; order: -1; }
+    .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(253, 250, 252, 0.92); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 24px rgba(78, 2, 47, 0.08); display: flex; flex-direction: column; gap: 8px; z-index: 50; border-top: 1px solid rgba(196, 65, 141, 0.15); transition: padding 0.3s ease; }
+    .bottom-bar .tier-progress-wrapper { width: 100%; }
+    .bottom-action-row .btn { padding: 13px 18px; }
   }
   @media (min-width: 769px) { 
-    .bottom-bar { margin-top: 20px; display: grid; grid-template-columns: auto 1fr; gap: 16px 24px; align-items: center; position: sticky; bottom: 0; background: rgba(253, 250, 252, 0.85); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); border-top: 1px solid rgba(196, 65, 141, 0.12); padding: 16px 20px; border-radius: var(--radius-md) var(--radius-md) 0 0; box-shadow: 0 -4px 24px rgba(78, 2, 47, 0.05); z-index: 40; } 
-    .bottom-bar .tier-progress { grid-column: 1 / -1; margin-bottom: 0; }
-    .bottom-bar .qty-row { margin-bottom: 0; } 
-    .bottom-bar .btn { width: 100%; margin: 0; } 
+    .bottom-bar { margin-top: 20px; display: flex; flex-direction: column; gap: 12px; position: sticky; bottom: 0; background: rgba(253, 250, 252, 0.88); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); border-top: 1px solid rgba(196, 65, 141, 0.12); padding: 16px 20px; border-radius: var(--radius-md) var(--radius-md) 0 0; box-shadow: 0 -4px 24px rgba(78, 2, 47, 0.05); z-index: 40; } 
+    .bottom-bar .tier-progress-wrapper { width: 100%; }
+    .bottom-action-row .btn { padding: 15px 22px; }
   }
 
   .btn { border: none; border-radius: 999px; padding: 16px 26px; font-weight: 700; font-size: 15px; color: white; background: var(--toboko-gradient); box-shadow: 5px 6px 9px 0px rgba(196, 65, 141, 0.25); width: 100%; transition: transform .1s; }
@@ -343,6 +356,7 @@
     view: 'home', productId: null, selectedVariant: null, qty: 1, cart: [], products: [],          
     productsLoading: true, productsError: false, inventory: {}, lastOrderId: null,
     lastOrderShippingFee: 0, lastOrderIsFreeship: false, cartBannerQty: 0,
+    descExpanded: false, tierProgressVisible: true,
     discountTiers: [
       { min: 100, max: Infinity, discount: 10000 },
       { min: 50, max: 99, discount: 7000 },
@@ -352,6 +366,7 @@
     ]
   };
 
+  let _tierCollapseTimer = null;
   const app = document.getElementById('app');
   const toastEl = document.getElementById('toast');
 
@@ -436,7 +451,7 @@
 
     if (totalQty === targetTier.min && previewQty > 0) {
         pct = 100;
-        msg = isFreeshipGoal ? `Đã đủ điều kiện <b style="color:var(--primary);">Freeship</b>! Thêm vào giỏ để áp dụng.` : `Đã đủ điều kiện giảm sỉ <b>${targetTier.discount/1000}k/SP</b>! Thêm vào giỏ để áp dụng.`;
+        msg = isFreeshipGoal ? `Đã đủ điều kiện <b style="color:var(--primary);">Freeship</b>! Thêm vào giỏ để áp dụng.` : `Bạn đủ điều kiện giảm giá rồi! Thêm vào giỏ hàng để được áp dụng nha`;
     } else if (totalQty === targetTier.min && previewQty === 0) {
         const nextTargetIdx = activeTiers.indexOf(targetTier) + 1;
         if (nextTargetIdx < activeTiers.length) {
@@ -671,8 +686,14 @@
     popupSource = null;
 
     state.view = view;
+    clearTimeout(_tierCollapseTimer);
     if (params?.productId !== undefined) state.productId = params.productId;
-    if (view === 'detail') { state.selectedVariant = null; state.qty = 1; }
+    if (view === 'detail') { 
+      state.selectedVariant = null; 
+      state.qty = 1; 
+      state.descExpanded = false; 
+      state.tierProgressVisible = true; 
+    }
     
     const header = document.getElementById('siteHeader'), cartBtn = document.getElementById('cartBtn');
     if (header) header.classList.toggle('sub-page', view !== 'home' && view !== 'success');
@@ -746,6 +767,20 @@
     if (p.image) imageSet.add(p.image);
     if (p.variantImages) Object.values(p.variantImages).forEach(img => { if (img) imageSet.add(img); });
     const uniqueImages = imageSet.size ? Array.from(imageSet) : [null]; 
+    const descRaw = p.desc ? String(p.desc).trim() : '';
+    const isLongDesc = descRaw.length > 70 || descRaw.includes('\n');
+    let descHtml = '';
+    if (descRaw) {
+      if (isLongDesc) {
+        descHtml = `
+          <div class="desc-wrap">
+            <p class="desc-text ${state.descExpanded ? '' : 'clamp-2'}" id="descText">${esc(descRaw)}</p>
+            <button class="desc-toggle-btn" id="descToggleBtn" type="button">${state.descExpanded ? 'Thu gọn ‹' : 'Xem thêm ›'}</button>
+          </div>`;
+      } else {
+        descHtml = `<div class="desc-wrap"><p class="desc-text">${esc(descRaw)}</p></div>`;
+      }
+    }
 
     let html = `<div class="detail">
       <div class="carousel" style="background:${esc(p.color)}">
@@ -764,11 +799,11 @@
       <div>
         <h2>${esc(p.name)}</h2>
         <div class="price-big" data-price-id="${esc(p.name)}">${priceHTML(p.price)}</div>
-        <p class="desc">${esc(p.desc)}</p>
+        ${descHtml}
     `;
 
     if (p.variants.length === 0 || allOOS) {
-      html += `<div class="oos-block">${allOOS ? '😔 Sản phẩm này hiện tạm thời chưa thể đặt hàng. Bạn xem sản phẩm khác giúp mình nhé.' : '⚠️ Sản phẩm này chưa có dữ liệu tồn kho. Bạn xem sản phẩm khác giúp mình nhé.'}</div></div></div>`;
+      html += `<div class="oos-block">${allOOS ? '😔 Sản phẩm này hiện tạm thời chưa thể đặt hàng. Bạn xem sản phẩm khác giúp mình nhé.' : 'Oops! Hiện không thể mua sản phẩm này rồi, bạn chọn sản phẩm khác giúp shop nha'}</div></div></div>`;
       app.innerHTML = html; return;
     }
 
@@ -796,29 +831,53 @@
       html += `<div class="stock-info ${maxStock <= LOW_STOCK_THRESHOLD ? 'low' : ''}" style="display:inline-block; margin-bottom:20px;">Còn ${maxStock} sản phẩm</div>`;
     }
 
-    const btnDisable = !state.selectedVariant || maxStock <= 0 ? 'disabled' : '';
+    const btnDisable = state.selectedVariant && maxStock <= 0 ? 'disabled' : '';
     const btnText = !state.selectedVariant ? 'Chọn phân loại' : (maxStock <= 0 ? 'Đã hết hàng' : 'Thêm vào giỏ hàng');
+
+    const shouldCollapse = !isSingleVariant && !state.selectedVariant && !state.tierProgressVisible;
+
+    if (!isSingleVariant && !state.selectedVariant && state.tierProgressVisible) {
+      clearTimeout(_tierCollapseTimer);
+      _tierCollapseTimer = setTimeout(() => {
+        if (!state.selectedVariant && state.view === 'detail') {
+          state.tierProgressVisible = false;
+          const wrap = document.getElementById('tierProgressWrapper');
+          if (wrap) wrap.classList.add('collapsed');
+          scheduleSyncDetailBottomPadding();
+        }
+      }, 1500);
+    }
 
     const oldFill = document.querySelector('.bottom-bar .tier-progress-fill');
     const startW = oldFill ? oldFill.style.width : '0%';
 
     html += `
       <div class="bottom-bar">
-        ${tierProgressHTML(cartTotalQty(), state.qty, startW)}
-        <div class="qty-row">
-          <div class="label qty-label" style="font-weight:700;font-size:13px;color:var(--text); margin:0;">Số lượng</div>
+        <div class="tier-progress-wrapper ${shouldCollapse ? 'collapsed' : ''}" id="tierProgressWrapper">
+          ${tierProgressHTML(cartTotalQty(), state.qty, startW)}
+        </div>
+        <div class="bottom-action-row">
           <div class="qty-control">
             <button id="qtyMinus" ${!state.selectedVariant ? 'disabled' : ''}>−</button>
             <input type="number" id="qtyVal" value="${state.qty}" min="1" ${!state.selectedVariant ? 'disabled' : ''}>
             <button id="qtyPlus" ${!state.selectedVariant || state.qty >= maxStock ? 'disabled' : ''}>+</button>
           </div>
+          <button class="btn" id="addToCartBtn" ${btnDisable}>${btnText}</button>
         </div>
-        <button class="btn" id="addToCartBtn" ${btnDisable}>${btnText}</button>
       </div></div></div>`;
     
     app.innerHTML = html;
     setTimeout(() => document.querySelectorAll('.tier-progress-fill').forEach(el => el.style.width = el.dataset.w), 10);
     scheduleSyncDetailBottomPadding();
+
+    const wrapEl = document.getElementById('tierProgressWrapper');
+    if (wrapEl) {
+      wrapEl.addEventListener('transitionend', e => {
+        if (e.target === wrapEl && e.propertyName === 'max-height') {
+          syncDetailBottomPadding();
+        }
+      });
+    }
 
     const track = document.getElementById('mainCarousel');
     // Khởi tạo scroll linh hoạt cho băng chuyền ảnh
@@ -931,8 +990,45 @@
         return go('detail', { productId: card.dataset.id });
     }
 
+    const descToggle = e.target.closest('#descToggleBtn');
+    if (descToggle) {
+        const dText = document.getElementById('descText');
+        if (!dText) return;
+        
+        state.descExpanded = !state.descExpanded;
+        if (state.descExpanded) {
+            const clampedH = dText.offsetHeight;
+            dText.classList.remove('clamp-2');
+            const fullH = dText.scrollHeight;
+            dText.style.maxHeight = clampedH + 'px';
+            void dText.offsetHeight;
+            dText.style.maxHeight = fullH + 'px';
+            setTimeout(() => { if (state.descExpanded) dText.style.maxHeight = 'none'; }, 300);
+        } else {
+            const fullH = dText.offsetHeight;
+            dText.style.maxHeight = fullH + 'px';
+            dText.classList.add('clamp-2');
+            const clampedH = dText.offsetHeight;
+            dText.classList.remove('clamp-2');
+            void dText.offsetHeight;
+            dText.style.maxHeight = clampedH + 'px';
+            setTimeout(() => {
+                if (!state.descExpanded) {
+                    dText.classList.add('clamp-2');
+                    dText.style.maxHeight = '';
+                }
+            }, 300);
+        }
+        
+        descToggle.textContent = state.descExpanded ? 'Thu gọn ‹' : 'Xem thêm ›';
+        scheduleSyncDetailBottomPadding();
+        return;
+    }
+
     const pill = e.target.closest('.pill');
     if (pill && !pill.hasAttribute('disabled')) {
+        clearTimeout(_tierCollapseTimer);
+        state.tierProgressVisible = true;
         state.selectedVariant = pill.dataset.val;
         state.qty = 1;
         return renderDetail();
@@ -956,6 +1052,17 @@
 
     const addToCartBtn = e.target.closest('#addToCartBtn');
     if (addToCartBtn && !addToCartBtn.hasAttribute('disabled')) {
+        if (!state.selectedVariant) {
+            const variantGroup = document.querySelector('.variant-group');
+            if (variantGroup) {
+                variantGroup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                variantGroup.classList.remove('pulse-highlight');
+                void variantGroup.offsetWidth;
+                variantGroup.classList.add('pulse-highlight');
+                toast('Chọn phân loại để thêm vào giỏ hàng nha');
+            }
+            return;
+        }
         const p = findProduct(state.productId);
         const key = `${p.name}|${state.selectedVariant}`;
         const existing = state.cart.find(i => i.key === key);
@@ -1186,12 +1293,12 @@
           const n = document.getElementById('fName').value.trim(), p = document.getElementById('fPhone').value.trim(), a = document.getElementById('fAddress').value.trim();
           if (!n || !p || !a) return toast('Bạn điền giúp mình đủ các thông tin bắt buộc nhé');
           const phoneDigits = p.replace(/[\s.\-]/g, ''); 
-          if (!/^0\d{9}$/.test(phoneDigits)) return toast('Số điện thoại không hợp lệ (VD: 0901234567)');
+          if (!/^0\d{9}$/.test(phoneDigits)) return toast('Bạn điền sai SĐT rồi! kiểm tra lại giúp shop nhe!');
           
           btn.disabled = true; btn.textContent = 'Đang kiểm tra tồn kho...';
           
           fetchShopData().then(ok => {
-            if (!ok && !WEB_APP_URL.includes('AKfycb...')) { btn.disabled = false; btn.textContent = 'Hoàn tất đặt hàng'; return toast('Mình chưa kiểm tra được tồn kho lúc này, bạn thử lại giúp mình nhé'); }
+            if (!ok && !WEB_APP_URL.includes('AKfycb...')) { btn.disabled = false; btn.textContent = 'Hoàn tất đặt hàng'; return toast('Ops! Mạng lag rùi hông load được, bạn thông cảm giúp shop nha'); }
             
             let adjusted = [], removed = [];
             state.cart.forEach(item => {
@@ -1204,7 +1311,7 @@
             if (removed.length || adjusted.length) {
               btn.disabled = false; btn.textContent = 'Hoàn tất đặt hàng'; 
               updateCartBadge(); 
-              toast(`😥 Một vài sản phẩm vừa hết/thay đổi: ${removed.length ? 'Vừa hết hàng: ' + removed.join(', ') : 'Đã điều chỉnh: ' + adjusted.join(', ')}. Bạn xem lại giúp mình nhé`); 
+              toast('Ops! Đơn hàng có bạn khác vừa mua mất rồi, bạn mua sản phẩm khác nha'); 
               return renderCheckout();
             }
             
