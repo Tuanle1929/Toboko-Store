@@ -103,7 +103,6 @@
   @media (max-width: 768px) { .detail { grid-template-columns: 1fr; gap: 20px; padding-bottom: 80px; } }
   
   .carousel { position: relative; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--border); background: #fff; aspect-ratio: 1/1; }
-  /* Đã gỡ bỏ will-change tĩnh ở đây */
   .carousel-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -ms-overflow-style: none; width: 100%; height: 100%; scroll-behavior: smooth; }
   .carousel-track::-webkit-scrollbar { display: none; }
   .carousel-item { flex: 0 0 100%; scroll-snap-align: start; display: flex; align-items: center; justify-content: center; font-size: 100px; touch-action: manipulation; }
@@ -206,14 +205,12 @@
   .btn-outline { background: var(--surface); color: var(--text); border: 1.5px solid var(--border); box-shadow: var(--shadow-sm); }
   .btn-outline:active { transform: scale(.98); }
 
-  /* Đã gỡ bỏ will-change tĩnh ở đây */
   .img-popup { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; backdrop-filter: blur(4px); cursor: zoom-out; }
   .img-popup.show { display: flex; opacity: 1; }
   .img-popup img { max-width: 90%; max-height: 85vh; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); transform: scale(0.9); transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: none; }
   .img-popup.show img { transform: scale(1); }
   .img-popup-hint { position: absolute; bottom: 40px; color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; }
 
-  /* Đã gỡ bỏ will-change tĩnh ở đây */
   .popup-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -ms-overflow-style: none; width: 100%; height: 100%; }
   .popup-track::-webkit-scrollbar { display: none; }
   .popup-item { flex: 0 0 100%; scroll-snap-align: start; display: flex; align-items: center; justify-content: center; height: 100%; touch-action: manipulation; }
@@ -222,7 +219,7 @@
   .popup-arrow-prev { left: 12px; }
   .popup-arrow-next { right: 12px; }
 
-  /* Drawer (Giỏ hàng) - Đã gỡ bỏ will-change tĩnh ở đây */
+  /* Drawer (Giỏ hàng) */
   .overlay { position: fixed; inset: 0; background: rgba(45, 26, 54, 0.5); z-index: 60; display: none; backdrop-filter: blur(2px); }
   .overlay.open { display: block; }
   .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100%); background: var(--surface); z-index: 61; display: flex; flex-direction: column; transform: translateX(100%); transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: -10px 0 40px rgba(0,0,0,0.1); overscroll-behavior: contain; }
@@ -377,7 +374,7 @@
   const app = document.getElementById('app');
   const toastEl = document.getElementById('toast');
 
-  // [HÀM MỚI] Xử lý scroll will-change tự dọn dẹp
+  // Quản lý scroll will-change tự dọn dẹp
   const setupScrollWillChange = track => {
     if (!track) return;
     let scrollTimeout;
@@ -548,7 +545,10 @@
   };
 
   const isProductOutOfStock = p => !state.productsLoading && getProductTotalStock(p) <= 0;
-  const cardStockInlineHTML = p => getProductTotalStock(p) <= 0 ? `<span class="card-stock-text oos">Hết hàng</span>` : `<span class="card-stock-text">SL ${getProductTotalStock(p)}</span>`;
+  const cardStockInlineHTML = p => {
+    const stock = getProductTotalStock(p);
+    return stock <= 0 ? `<span class="card-stock-text oos">Hết hàng</span>` : `<span class="card-stock-text">SL ${stock}</span>`;
+  };
 
   const fetchShopData = async () => {
     if (!WEB_APP_URL || WEB_APP_URL.includes('AKfycb...')) return false; 
@@ -1278,7 +1278,7 @@
       ${discountTotal > 0 ? `<div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px; color:var(--text);"><span>Giảm giá sỉ</span><span>- ${fmt(discountTotal)}</span></div>` : ''}
       <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px; color:var(--text);"><span>Phí ship (tạm tính)</span><span>${isFreeship() ? '<span style="color:var(--primary); font-weight:800;">Miễn phí</span>' : fmt(shippingFee)}</span></div>
       <div style="display:flex; justify-content:space-between; font-weight:800; font-size:17px; margin-bottom:14px; border-top:1px dashed var(--border); padding-top:10px;"><span>Tổng thanh toán</span><span style="color:var(--primary);">${fmt(finalTotal + shippingFee)}</span></div>
-      <button class="btn block" id="checkoutBtn" style="width:100%">Tiếp tục thanh toán</button>
+      <button class="btn" id="checkoutBtn">Tiếp tục thanh toán</button>
     `;
   };
 
@@ -1366,7 +1366,7 @@
         <div class="field"><label>Số điện thoại *</label><input type="tel" id="fPhone" placeholder="09xx xxx xxx" autocomplete="tel"></div>
         <div class="field"><label>Địa chỉ nhận hàng *</label><input type="text" id="fAddress" placeholder="Số nhà, Phường, Quận, TP..." autocomplete="street-address"></div>
         <div class="field"><label>Ghi chú (Tùy chọn)</label><textarea id="fNote" rows="2" placeholder="Giao giờ hành chính..."></textarea></div>
-        <button class="btn block" id="submitOrderBtn" style="margin-top:8px;">Hoàn tất đặt hàng</button>
+        <button class="btn" id="submitOrderBtn" style="margin-top:8px;">Hoàn tất đặt hàng</button>
       </div>`;
     app.innerHTML = html;
   };
