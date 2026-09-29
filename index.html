@@ -115,8 +115,11 @@
 
   .variant-preview { display: flex; align-items: center; gap: 10px; background: var(--bg); border-radius: 14px; padding: 8px; margin-bottom: 12px; cursor: pointer; transition: opacity 0.15s; user-select: none; }
   .variant-preview:active { opacity: 0.7; }
-  .preview-thumb { width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0; overflow: hidden; border: 1px solid var(--border); background: var(--surface); }
+  .preview-thumb { width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0; overflow: hidden; border: 1px solid var(--border); background: var(--surface); position: relative; }
   .preview-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .preview-thumb.oos img { opacity: 0.65; }
+  .preview-oos-badge { position: absolute; inset: 0; background: rgba(45, 26, 54, 0.65); color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 9px; pointer-events: none; letter-spacing: -0.2px; }
+  .oos-tag-inline { font-size: 12px; color: var(--danger); font-weight: 700; margin-left: 6px; }
   .preview-text { min-width: 0; }
   .preview-text b { display: block; font-size: 17px; font-weight: 800; }
   .preview-text span { display: block; font-size: 19px; color: var(--text-muted); margin-top: 1px; }
@@ -134,6 +137,7 @@
     .variant-preview { display: none; }
   }
 
+  .carousel.carousel-oos .carousel-item img { opacity: 0.78; }
   .detail h2 { font-size: 22px; margin: 0 0 10px; letter-spacing: -0.5px; line-height: 1.3;}
   .detail .price-big { font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 16px; }
   .desc-wrap { margin-bottom: 20px; }
@@ -152,7 +156,9 @@
   .pill-row { display: flex; flex-wrap: wrap; gap: 10px; }
   .pill { border: 1.5px solid var(--border); background: var(--surface); padding: 10px 18px; border-radius: 12px; font-weight: 600; font-size: 14px; transition: all .15s; color: var(--text); }
   .pill.selected { border-color: transparent; background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(196, 65, 141, 0.25); }
-  .pill:disabled { opacity: 0.4; cursor: not-allowed; background: var(--surface-2); border-color: var(--border); color: var(--text-muted); text-decoration: line-through;}
+  .pill.oos { opacity: 0.55; background: var(--surface-2); border: 1.5px dashed var(--border); color: var(--text-muted); }
+  .pill.oos.selected { opacity: 0.95; border: 1.5px solid var(--primary); background: #fff0f6; color: var(--primary); box-shadow: 0 2px 8px rgba(196, 65, 141, 0.15); }
+  .pill:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; background: var(--surface-2); border-color: var(--border); color: var(--text-muted); }
 
   input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   input[type="number"] { -moz-appearance: textfield; }
@@ -163,6 +169,7 @@
   .qty-control input { width: 44px; text-align: center; font-weight: 800; font-size: 16px; background: transparent; border: none; outline: none; padding: 0; color: var(--text); font-family: inherit;}
   .stock-info { font-size: 12px; color: var(--text); font-weight: 600; background: var(--surface); padding: 4px 10px; border-radius: 999px;}
   .stock-info.low { color: #EA75A2; background: #fffaff; }
+  .stock-info.oos { color: var(--danger); background: #fff0f6; border: 1px solid #ffd1dc; }
 
   .tier-progress-wrapper { width: 100%; overflow: hidden; max-height: 90px; opacity: 1; transform: translateY(0); transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, margin-bottom 0.3s ease, transform 0.3s ease; margin-bottom: 8px; }
   .tier-progress-wrapper.collapsed { max-height: 0; opacity: 0; margin-bottom: 0 !important; transform: translateY(-6px); pointer-events: none; }
@@ -740,7 +747,7 @@
             ${cardHotPillHTML(p)}
             <div class="thumb" style="background:${esc(p.color)}">
               ${thumbContent}
-              ${isOOS ? '<div class="oos-badge">Bán hết</div>' : ''}
+              ${isOOS ? '<div class="oos-badge">Hết hàng</div>' : ''}
               ${cardRibbonBestsellerHTML(p)}
             </div>
             <div class="card-body">
@@ -787,7 +794,7 @@
     }
 
     let html = `<div class="detail">
-      <div class="carousel" style="background:${esc(p.color)}">
+      <div class="carousel ${isOOS ? 'carousel-oos' : ''}" style="background:${esc(p.color)}">
         <div class="carousel-track" id="mainCarousel">
           ${uniqueImages.map(img => `<div class="carousel-item">${img ? `<img src="${esc(img)}" alt="${esc(p.name)}">` : esc(p.emoji)}</div>`).join('')}
         </div>
@@ -798,7 +805,7 @@
           <div class="carousel-arrow carousel-arrow-prev disabled" id="carouselPrev">‹</div>
           <div class="carousel-arrow carousel-arrow-next" id="carouselNext">›</div>
         ` : ''}
-        ${isOOS ? `<div class="oos-badge">Bán hết</div>` : ''}
+        ${isOOS ? `<div class="oos-badge">Hết hàng</div>` : ''}
       </div>
       <div>
         <h2>${esc(p.name)}</h2>
@@ -813,26 +820,37 @@
 
     if (!isSingleVariant) {
       const previewImg = state.selectedVariant ? variantImage(p, state.selectedVariant) : null;
+      const isVariantOos = state.selectedVariant ? getStock(p.name, state.selectedVariant) <= 0 : false;
       html += `
         <div class="variant-group">
           <div class="label">Mã sản phẩm</div>
           <div class="variant-preview" id="variantPreview">
             ${previewImg ? `
-              <div class="preview-thumb"><img src="${esc(previewImg)}" alt="${esc(p.name)}"></div>
-              <div class="preview-text"><b>${esc(state.selectedVariant)}</b><span>Chạm để xem ảnh sản phẩm </span></div>
+              <div class="preview-thumb ${isVariantOos ? 'oos' : ''}">
+                <img src="${esc(previewImg)}" alt="${esc(p.name)}">
+                ${isVariantOos ? `<div class="preview-oos-badge">Hết hàng</div>` : ''}
+              </div>
+              <div class="preview-text">
+                <b>${esc(state.selectedVariant)}${isVariantOos ? '<span class="oos-tag-inline">(Hết hàng)</span>' : ''}</b>
+                <span>Chạm để xem ảnh sản phẩm </span>
+              </div>
             ` : `<div class="preview-empty">${state.selectedVariant ? 'Mã này chưa có ảnh riêng' : 'Chọn 1 mã bên dưới để xem ảnh ngay tại đây'}</div>`}
           </div>
           <div class="pill-row">
             ${p.variants.map(v => {
-              const stock = getStock(p.name, v), isOOS = stock <= 0; 
-              return `<button class="pill ${state.selectedVariant === v ? 'selected' : ''}" ${isOOS ? 'disabled' : ''} data-val="${esc(v)}">${esc(v)}${isOOS ? ' (Hết)' : ''}</button>`;
+              const stock = getStock(p.name, v), isPillOos = stock <= 0; 
+              return `<button class="pill ${state.selectedVariant === v ? 'selected' : ''} ${isPillOos ? 'oos' : ''}" data-val="${esc(v)}">${esc(v)}</button>`;
             }).join('')}
           </div>
         </div>`;
     }
 
-    if (state.selectedVariant && maxStock > 0) {
-      html += `<div class="stock-info ${maxStock <= LOW_STOCK_THRESHOLD ? 'low' : ''}" style="display:inline-block; margin-bottom:20px;">Còn ${maxStock} sản phẩm</div>`;
+    if (state.selectedVariant) {
+      if (maxStock > 0) {
+        html += `<div class="stock-info ${maxStock <= LOW_STOCK_THRESHOLD ? 'low' : ''}" style="display:inline-block; margin-bottom:20px;">Còn ${maxStock} sản phẩm</div>`;
+      } else {
+        html += `<div class="stock-info oos" style="display:inline-block; margin-bottom:20px;">Mã này tạm thời hết hàng</div>`;
+      }
     }
 
     const btnDisable = state.selectedVariant && maxStock <= 0 ? 'disabled' : '';
@@ -854,22 +872,24 @@
 
     const oldFill = document.querySelector('.bottom-bar .tier-progress-fill');
     const startW = oldFill ? oldFill.style.width : '0%';
+    const isQtyDisabled = !state.selectedVariant || maxStock <= 0;
+    const previewProgressQty = (state.selectedVariant && maxStock <= 0) ? 0 : state.qty;
 
     html += `
       <div class="bottom-bar">
         <div class="tier-progress-wrapper ${shouldCollapse ? 'collapsed' : ''}" id="tierProgressWrapper">
-          ${tierProgressHTML(cartTotalQty(), state.qty, startW)}
+          ${tierProgressHTML(cartTotalQty(), previewProgressQty, startW)}
         </div>
         <div class="bottom-action-row">
           <div class="qty-control">
-            <button id="qtyMinus" ${!state.selectedVariant ? 'disabled' : ''}>−</button>
-            <input type="number" id="qtyVal" value="${state.qty}" min="1" ${!state.selectedVariant ? 'disabled' : ''}>
-            <button id="qtyPlus" ${!state.selectedVariant || state.qty >= maxStock ? 'disabled' : ''}>+</button>
+            <button id="qtyMinus" ${isQtyDisabled || state.qty <= 1 ? 'disabled' : ''}>−</button>
+            <input type="number" id="qtyVal" value="${state.qty}" min="1" ${isQtyDisabled ? 'disabled' : ''}>
+            <button id="qtyPlus" ${isQtyDisabled || state.qty >= maxStock ? 'disabled' : ''}>+</button>
           </div>
           <button class="btn" id="addToCartBtn" ${btnDisable}>${btnText}</button>
         </div>
       </div></div></div>`;
-    
+
     app.innerHTML = html;
     setTimeout(() => document.querySelectorAll('.tier-progress-fill').forEach(el => el.style.width = el.dataset.w), 10);
     scheduleSyncDetailBottomPadding();
@@ -1030,7 +1050,7 @@
     }
 
     const pill = e.target.closest('.pill');
-    if (pill && !pill.hasAttribute('disabled')) {
+    if (pill) {
         clearTimeout(_tierCollapseTimer);
         state.tierProgressVisible = true;
         state.selectedVariant = pill.dataset.val;
@@ -1107,6 +1127,7 @@
       if (e.target.id === 'qtyVal') {
           const p = findProduct(state.productId);
           const maxStock = getStock(p.name, state.selectedVariant);
+          if (maxStock <= 0) { state.qty = 1; return renderDetail(); }
           let val = parseInt(e.target.value, 10);
           if (isNaN(val) || val < 1) val = 1;
           if (val > maxStock) { val = maxStock; toast(`Dạ kho chỉ còn tối đa ${maxStock} sản phẩm thôi ạ`); }
