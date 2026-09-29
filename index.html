@@ -29,7 +29,7 @@
 
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Be Vietnam Pro', sans-serif; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
-  body { padding-bottom: env(safe-area-inset-bottom, 0px); min-height: 100vh; }
+  body { padding-bottom: env(safe-area-inset-bottom, 0px); min-height: 100vh; min-height: 100dvh; }
   button { font-family: inherit; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
 
@@ -218,11 +218,11 @@
   /* Drawer (Giỏ hàng) - Đã gỡ bỏ will-change tĩnh ở đây */
   .overlay { position: fixed; inset: 0; background: rgba(45, 26, 54, 0.5); z-index: 60; display: none; backdrop-filter: blur(2px); }
   .overlay.open { display: block; }
-  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100%); background: var(--surface); z-index: 61; display: flex; flex-direction: column; transform: translateX(100%); transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: -10px 0 40px rgba(0,0,0,0.1); }
+  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100%); background: var(--surface); z-index: 61; display: flex; flex-direction: column; transform: translateX(100%); transition: transform .3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: -10px 0 40px rgba(0,0,0,0.1); overscroll-behavior: contain; }
   .drawer.open { transform: translateX(0); }
   .drawer-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; border-bottom: 1px solid var(--border); font-weight: 800; font-size: 18px;}
   .drawer-head button { background: none; border: none; font-size: 22px; color: var(--text-muted); width: 32px; height: 32px; display:flex; align-items:center; justify-content:center; border-radius: 50%; background: var(--surface-2); }
-  .drawer-body { flex: 1; overflow-y: auto; padding: 14px 20px; }
+  .drawer-body { flex: 1; overflow-y: auto; padding: 14px 20px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
   .drawer-foot { padding: 20px; border-top: 1px solid var(--border); background: var(--bg); }
   .cart-item { display: flex; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--border); }
   .cart-item:last-child { border-bottom: none; }
@@ -681,7 +681,10 @@
   const go = (view, params, pushHistory = true) => {
     document.body.style.overflow = '';
     document.getElementById('overlay').classList.remove('open');
-    document.getElementById('drawer').classList.remove('open');
+    const _d = document.getElementById('drawer');
+    _d.classList.remove('open');
+    _d.style.transform = '';
+    _d.style.transition = '';
     document.getElementById('imgPopup').classList.remove('show');
     popupSource = null;
 
@@ -1125,6 +1128,8 @@
     state.cartBannerQty = cartTotalQty();
     renderDrawer(); 
     
+    drawer.style.transform = '';
+    drawer.style.transition = '';
     // Bật compositor layer để animate
     drawer.style.willChange = 'transform';
     requestAnimationFrame(() => {
@@ -1136,6 +1141,8 @@
   };
 
   const closeDrawer = () => { 
+    drawer.style.transform = '';
+    drawer.style.transition = '';
     // Bật lại compositor layer để đóng
     drawer.style.willChange = 'transform';
     requestAnimationFrame(() => {
@@ -1149,6 +1156,61 @@
   document.getElementById('cartBtn').addEventListener('click', openDrawer);
   document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
   document.getElementById('overlay').addEventListener('click', closeDrawer);
+  document.getElementById('overlay').addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+  // Vuốt (Swipe) kéo sang phải để đóng giỏ hàng
+  // Chỉ bắt Swipe khi ngón tay bắt đầu trong vùng 30px bên trái của drawer (giống iOS)
+  (() => {
+    let startX = 0, startY = 0, currentDeltaX = 0, isHorizontalSwipe = false, allowSwipe = false;
+    drawer.addEventListener('touchstart', e => {
+      if (e.touches && e.touches[0]) {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        currentDeltaX = 0;
+        isHorizontalSwipe = false;
+        // Chỉ cho phép Swipe nếu ngón tay bắt đầu trong vùng 30px cạnh trái của drawer
+        const drawerLeft = drawer.getBoundingClientRect().left;
+        allowSwipe = (startX - drawerLeft) < 30;
+      }
+    }, { passive: true });
+
+    drawer.addEventListener('touchmove', e => {
+      if (!allowSwipe || !e.touches || !e.touches[0]) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = Math.abs(e.touches[0].clientY - startY);
+
+      if (!isHorizontalSwipe && dx > 15 && dx > dy) {
+        isHorizontalSwipe = true;
+      }
+
+      if (isHorizontalSwipe && dx > 0) {
+        currentDeltaX = dx;
+        drawer.style.transition = 'none';
+        drawer.style.transform = `translateX(${dx}px)`;
+      }
+    }, { passive: true });
+
+    drawer.addEventListener('touchend', () => {
+      if (!isHorizontalSwipe) return;
+      isHorizontalSwipe = false;
+      allowSwipe = false;
+      drawer.style.transition = '';
+      if (currentDeltaX > 75) {
+        closeDrawer();
+      } else {
+        drawer.style.transform = '';
+      }
+    }, { passive: true });
+
+    // Reset khi iOS cắt ngang ngón tay (notification, cuộc gọi...)
+    drawer.addEventListener('touchcancel', () => {
+      isHorizontalSwipe = false;
+      allowSwipe = false;
+      currentDeltaX = 0;
+      drawer.style.transition = '';
+      drawer.style.transform = '';
+    }, { passive: true });
+  })();
 
   const renderDrawer = () => {
     const drawerBody = document.getElementById('drawerBody'), drawerFoot = document.getElementById('drawerFoot');
@@ -1279,9 +1341,9 @@
           ${shippingRowHTML(getShippingFee(), isFreeship())}
           <div class="s-row s-total"><span>Tổng thanh toán</span><span>${fmt(cartTotal() + getShippingFee())}</span></div>
         </div>
-        <div class="field"><label>Họ và tên *</label><input type="text" id="fName" placeholder="Tên người nhận"></div>
-        <div class="field"><label>Số điện thoại *</label><input type="tel" id="fPhone" placeholder="09xx xxx xxx"></div>
-        <div class="field"><label>Địa chỉ nhận hàng *</label><input type="text" id="fAddress" placeholder="Số nhà, Phường, Quận, TP..."></div>
+        <div class="field"><label>Họ và tên *</label><input type="text" id="fName" placeholder="Tên người nhận" autocomplete="name"></div>
+        <div class="field"><label>Số điện thoại *</label><input type="tel" id="fPhone" placeholder="09xx xxx xxx" autocomplete="tel"></div>
+        <div class="field"><label>Địa chỉ nhận hàng *</label><input type="text" id="fAddress" placeholder="Số nhà, Phường, Quận, TP..." autocomplete="street-address"></div>
         <div class="field"><label>Ghi chú (Tùy chọn)</label><textarea id="fNote" rows="2" placeholder="Giao giờ hành chính..."></textarea></div>
         <button class="btn block" id="submitOrderBtn" style="margin-top:8px;">Hoàn tất đặt hàng</button>
       </div>`;
@@ -1293,7 +1355,10 @@
           const btn = e.target;
           const n = document.getElementById('fName').value.trim(), p = document.getElementById('fPhone').value.trim(), a = document.getElementById('fAddress').value.trim();
           if (!n || !p || !a) return toast('Bạn điền giúp mình đủ các thông tin bắt buộc nhé');
-          const phoneDigits = p.replace(/[\s.\-]/g, ''); 
+          let phoneDigits = p.replace(/[\s.\-\+]/g, ''); 
+          if (phoneDigits.startsWith('84') && phoneDigits.length === 11) {
+            phoneDigits = '0' + phoneDigits.slice(2);
+          }
           if (!/^0\d{9}$/.test(phoneDigits)) return toast('Bạn điền sai SĐT rồi! kiểm tra lại giúp shop nhe!');
           
           btn.disabled = true; btn.textContent = 'Đang kiểm tra tồn kho...';
