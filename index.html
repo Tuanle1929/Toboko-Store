@@ -351,7 +351,7 @@
   const LOW_STOCK_THRESHOLD = 10; 
   const DEFAULT_VARIANT_LABEL = 'Mặc định'; 
   const SHIPPING_FEE = 20000;
-  const SHIPPING_FREE_THRESHOLD = 20;
+  const SHIPPING_FREE_THRESHOLD = 10;
 
   const esc = str => String(str ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
   const fmt = n => (typeof n === 'number' && !isNaN(n) ? n : 0).toLocaleString('vi-VN') + '₫';
@@ -428,62 +428,91 @@
 
   const tierProgressHTML = (baseQty, previewQty = 0, startWidth = '0%') => {
     const totalQty = baseQty + previewQty;
-    const activeTiers = state.discountTiers.filter(t => t.discount > 0).sort((a, b) => a.min - b.min);
-    let targetTier = null, prevMilestone = 0;
 
-    for (let i = 0; i < activeTiers.length; i++) {
-        if (activeTiers[i].min >= totalQty) {
-            targetTier = activeTiers[i];
-            prevMilestone = i > 0 ? activeTiers[i - 1].min : 0;
-            break;
-        }
-    }
+    // Bảng mốc gộp: discount tiers + freeship milestone, sắp xếp tăng dần
+    const activeTiers = state.discountTiers.filter(t => t.discount > 0);
+    const milestones = [
+      ...activeTiers.map(t => ({ min: t.min, type: 'discount', discount: t.discount })),
+      { min: SHIPPING_FREE_THRESHOLD, type: 'freeship' }
+    ].sort((a, b) => a.min - b.min);
 
-    if (!targetTier) {
-      const msgMax = totalQty >= SHIPPING_FREE_THRESHOLD
-        ? `🎉 Đang hưởng <b style="color:var(--primary);">Freeship</b> và mức giảm giá sỉ cao nhất!`
-        : `🎉 Đang hưởng mức giảm giá sỉ cao nhất!`;
+    // Tìm mốc target: milestone đầu tiên có min >= totalQty (dùng >= để bắt đúng mốc vừa đạt)
+    let targetIdx = milestones.findIndex(m => m.min >= totalQty);
+
+    // Nếu không tìm thấy → đã vượt tất cả mốc
+    if (targetIdx === -1) {
       return `
         <div class="tier-progress tier-progress-max">
-          <div class="tier-progress-row"><span class="tier-progress-icon">🎉</span><span class="tier-progress-text">${msgMax}</span></div>
+          <div class="tier-progress-row"><span class="tier-progress-icon">🎉</span><span class="tier-progress-text">Đang hưởng <b style="color:var(--primary);">Freeship</b> và mức giảm giá sỉ cao nhất!</span></div>
           <div class="tier-progress-track"><div class="tier-progress-fill" data-w="100%" style="width:${startWidth};"></div></div>
         </div>`;
     }
 
-    const isFreeshipGoal = targetTier.min === SHIPPING_FREE_THRESHOLD;
-    let msg, pct;
+    let target = milestones[targetIdx];
+    const prevMin = targetIdx > 0 ? milestones[targetIdx - 1].min : 0;
 
-    if (totalQty === targetTier.min && previewQty > 0) {
-        pct = 100;
-        msg = isFreeshipGoal ? `Đã đủ điều kiện <b style="color:var(--primary);">Freeship</b>! Thêm vào giỏ để áp dụng.` : `Bạn đủ điều kiện giảm giá rồi! Thêm vào giỏ hàng để được áp dụng nha`;
-    } else if (totalQty === targetTier.min && previewQty === 0) {
-        const nextTargetIdx = activeTiers.indexOf(targetTier) + 1;
-        if (nextTargetIdx < activeTiers.length) {
-            const newTarget = activeTiers[nextTargetIdx];
-            const needed = newTarget.min - totalQty;
-            pct = 0;
-            msg = newTarget.min === SHIPPING_FREE_THRESHOLD
-               ? `Thêm <b>${needed}</b> sản phẩm nữa để được <b style="color:var(--primary);">Freeship</b> + giảm thêm <b>${newTarget.discount/1000}k/SP</b>!`
-               : `Thêm <b>${needed}</b> sản phẩm nữa để được giảm thêm <b>${newTarget.discount/1000}k/SP</b>!`;
-            targetTier = newTarget; prevMilestone = totalQty;
-        } else {
-             pct = 100;
-             msg = isFreeshipGoal ? `Đã đủ điều kiện <b style="color:var(--primary);">Freeship</b>! Tiến hành thanh toán.` : `Đã đủ điều kiện giảm sỉ <b>${targetTier.discount/1000}k/SP</b>! Tiến hành thanh toán.`;
-        }
+    // === CASE B: đã đúng bằng mốc này trong giỏ (previewQty = 0) → nhìn sang mốc tiếp theo ===
+    if (totalQty === target.min && previewQty === 0) {
+      const nextIdx = targetIdx + 1;
+      if (nextIdx >= milestones.length) {
+        return `
+          <div class="tier-progress tier-progress-max">
+            <div class="tier-progress-row"><span class="tier-progress-icon">🎉</span><span class="tier-progress-text">Đang hưởng <b style="color:var(--primary);">Freeship</b> và mức giảm giá sỉ cao nhất!</span></div>
+            <div class="tier-progress-track"><div class="tier-progress-fill" data-w="100%" style="width:${startWidth};"></div></div>
+          </div>`;
+      }
+      targetIdx = nextIdx;
+      target = milestones[targetIdx];
+      const neededNext = target.min - totalQty;
+      const icon = target.type === 'freeship' ? '🚚' : '🛒';
+      const msgNext = target.type === 'freeship'
+        ? `Thêm <b>${neededNext}</b> sản phẩm nữa để được <b style="color:var(--primary);">Freeship</b>`
+        : `Thêm <b>${neededNext}</b> sản phẩm nữa để được giảm thêm <b>${target.discount/1000}k/SP</b>!`;
+      return `
+        <div class="tier-progress">
+          <div class="tier-progress-row"><span class="tier-progress-icon">${icon}</span><span class="tier-progress-text">${msgNext}</span><span class="tier-progress-count">${totalQty}/${target.min} SP</span></div>
+          <div class="tier-progress-track"><div class="tier-progress-fill" data-w="0%" style="width:${startWidth};"></div></div>
+        </div>`;
+    }
+
+    // Tính % và needed cho Case A và C
+    const needed = target.min - totalQty;
+    const pct = totalQty === target.min
+      ? 100
+      : Math.max(0, Math.min(100, ((totalQty - prevMin) / (target.min - prevMin)) * 100));
+
+    let icon, msg;
+
+    // === CASE A: preview vừa đủ mốc, chưa thêm vào giỏ ===
+    if (totalQty === target.min && previewQty > 0) {
+      icon = target.type === 'freeship' ? '🚚' : '🛒';
+      msg = target.type === 'freeship'
+        ? `Đủ điều kiện <b style="color:var(--primary);">Freeship</b>! Thêm vào giỏ để áp dụng.`
+        : `Bạn đủ điều kiện giảm giá rồi! Thêm vào giỏ hàng để được áp dụng nha`;
+
+    // === CASE C: đang tiến đến mốc ===
+    } else if (target.type === 'freeship') {
+      icon = '🚚';
+      msg = totalQty === 0
+        ? `Mua từ <b>${target.min}</b> sản phẩm để được <b style="color:var(--primary);">Freeship</b>`
+        : `Thêm <b>${needed}</b> sản phẩm nữa để được <b style="color:var(--primary);">Freeship</b>`;
     } else {
-        const needed = targetTier.min - totalQty;
-        pct = Math.max(0, Math.min(100, ((totalQty - prevMilestone) / (targetTier.min - prevMilestone)) * 100));
-        
-        if (totalQty === 0) {
-            msg = targetTier.min === 5 ? `Mua từ <b>${targetTier.min}</b> sản phẩm để được giá sỉ` : (isFreeshipGoal ? `Mua từ <b>${targetTier.min}</b> sản phẩm để được <b style="color:var(--primary);">Freeship</b> + giảm sỉ <b>${targetTier.discount/1000}k/SP</b> toàn bộ gian hàng` : `Mua từ <b>${targetTier.min}</b> sản phẩm để được giảm sỉ <b>${targetTier.discount/1000}k/SP</b> toàn bộ gian hàng`);
-        } else {
-            msg = targetTier.min === 5 ? `Thêm <b>${needed}</b> sản phẩm nữa để được giá sỉ` : (isFreeshipGoal ? `Thêm <b>${needed}</b> sản phẩm nữa để được <b style="color:var(--primary);">Freeship</b> + giảm thêm <b>${targetTier.discount/1000}k/SP</b> toàn bộ gian hàng!` : `Thêm <b>${needed}</b> sản phẩm nữa để được giảm <b>${targetTier.discount/1000}k/SP</b> toàn bộ gian hàng!`);
-        }
+      icon = '🛒';
+      const isFirst = targetIdx === 0; // Mốc 5 SP (giá sỉ đầu tiên)
+      if (totalQty === 0) {
+        msg = isFirst
+          ? `Mua từ <b>${target.min}</b> sản phẩm để được giá sỉ`
+          : `Mua từ <b>${target.min}</b> sản phẩm để được giảm sỉ <b>${target.discount/1000}k/SP</b>`;
+      } else {
+        msg = isFirst
+          ? `Thêm <b>${needed}</b> sản phẩm nữa để được giá sỉ`
+          : `Thêm <b>${needed}</b> sản phẩm nữa để được giảm thêm <b>${target.discount/1000}k/SP</b>!`;
+      }
     }
 
     return `
       <div class="tier-progress">
-        <div class="tier-progress-row"><span class="tier-progress-icon">🛒</span><span class="tier-progress-text">${msg}</span><span class="tier-progress-count">${totalQty}/${targetTier.min} SP</span></div>
+        <div class="tier-progress-row"><span class="tier-progress-icon">${icon}</span><span class="tier-progress-text">${msg}</span><span class="tier-progress-count">${totalQty}/${target.min} SP</span></div>
         <div class="tier-progress-track"><div class="tier-progress-fill" data-w="${pct}%" style="width:${startWidth};"></div></div>
       </div>`;
   };
@@ -1114,7 +1143,7 @@
         
         const newDiscount = getCurrentDiscount(), nowFreeship = isFreeship();
         if (newDiscount > oldDiscount) {
-          toast(nowFreeship && !wasFreeship ? `🎉 Tuyệt vời! Bạn được Freeship và giảm ${newDiscount/1000}K/SP!` : `🎉 Tuyệt vời, giảm ${newDiscount/1000}K toàn bộ gian hàng!`);
+          toast(nowFreeship && !wasFreeship ? `🎉 Tuyệt vời! Bạn được Freeship và giảm ${newDiscount/1000}k/SP!` : `🎉 Tuyệt vời, giảm ${newDiscount/1000}k/SP toàn bộ gian hàng!`);
         } else if (!wasFreeship && nowFreeship) {
           toast(`🎉 Tuyệt vời, bạn vừa được Freeship cho đơn hàng này!`);
         } else toast('Đã thêm vào giỏ hàng');
