@@ -186,12 +186,32 @@
 
   .bottom-action-row { display: flex; align-items: center; gap: 10px; width: 100%; flex-wrap: nowrap; }
   .bottom-action-row .qty-control { flex-shrink: 0; }
+  .bottom-action-row .sticky-price { display: none; }
   .bottom-action-row .btn { flex: 1; min-width: 0; margin: 0; white-space: nowrap; }
 
   @media (max-width: 768px) {
-    .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(253, 250, 252, 0.92); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 24px rgba(78, 2, 47, 0.08); display: flex; flex-direction: column; gap: 8px; z-index: 50; border-top: 1px solid rgba(196, 65, 141, 0.15); transition: padding 0.3s ease; }
+    .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(253, 250, 252, 0.92); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 24px rgba(78, 2, 47, 0.08); display: flex; flex-direction: column; gap: 8px; z-index: 50; border-top: 1px solid rgba(196, 65, 141, 0.15); transition: padding 0.3s ease; }
     .bottom-bar .tier-progress-wrapper { width: 100%; }
-    .bottom-action-row .btn { padding: 13px 18px; }
+    .bottom-action-row { justify-content: space-between; gap: 6px; }
+    .bottom-action-row .qty-control { padding: 3px; }
+    .bottom-action-row .qty-control button { width: 34px; height: 34px; font-size: 16px; }
+    .bottom-action-row .qty-control input { width: 32px; font-size: 14px; }
+    .bottom-action-row .sticky-price {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      padding: 0 2px;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--primary);
+      text-align: center;
+      white-space: nowrap;
+    }
+    .sticky-price .price-old { font-size: 10.5px; margin-right: 0; line-height: 1.1; }
+    .sticky-price .price-new { font-size: 13.5px; font-weight: 800; line-height: 1.1; }
+    .bottom-action-row .btn { padding: 11px 10px; font-size: 13.5px; }
   }
   @media (min-width: 769px) { 
     .bottom-bar { margin-top: 20px; display: flex; flex-direction: column; gap: 12px; position: sticky; bottom: 0; background: rgba(253, 250, 252, 0.88); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); border-top: 1px solid rgba(196, 65, 141, 0.12); padding: 16px 20px; border-radius: var(--radius-md) var(--radius-md) 0 0; box-shadow: 0 -4px 24px rgba(78, 2, 47, 0.05); z-index: 40; } 
@@ -915,6 +935,7 @@
             <input type="number" id="qtyVal" value="${state.qty}" min="1" ${isQtyDisabled ? 'disabled' : ''}>
             <button id="qtyPlus" ${isQtyDisabled || state.qty >= maxStock ? 'disabled' : ''}>+</button>
           </div>
+          <div class="sticky-price" data-price-id="${esc(p.name)}">${priceHTML(p.price)}</div>
           <button class="btn" id="addToCartBtn" ${btnDisable}>${btnText}</button>
         </div>
       </div></div></div>`;

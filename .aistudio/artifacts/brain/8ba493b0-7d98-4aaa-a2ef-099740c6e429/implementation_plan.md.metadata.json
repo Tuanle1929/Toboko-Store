@@ -1,6 +1,6 @@
 {
-  "summary":  "Kế hoạch tinh chỉnh nút Xem thêm / Thu gọn sang màu xám nhạt nhẹ nhàng, kích thước nhỏ gọn và tinh tế hơn.",
-  "updatedAt":  "2026-09-28T05:37:17.234777574Z",
-  "requestFeedback":  true,
-  "userFacing":  true
+  "summary": "Kế hoạch thiết kế và tái cấu trúc thanh công cụ Bottom Bar trang chi tiết sản phẩm trên Mobile theo chuẩn 3 khu vực: Giá sỉ thực tế bên trái, Cụm tăng giảm số lượng ở giữa, Nút icon giỏ hàng + bên phải, giữ nguyên hoàn toàn giao diện trên PC.",
+  "updatedAt": "2026-09-30T08:31:09.168437193Z",
+  "requestFeedback": true,
+  "userFacing": true
 }
