@@ -1480,7 +1480,7 @@
             }
             
             btn.textContent = 'Đang xử lý...';
-            const orderId = 'TBK' + Date.now().toString(36).toUpperCase();
+            const orderId = 'TBK' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
             const orderedItems = state.cart.map(i => ({ name: i.name, variant: i.variant, qty: i.qty, price: i.price, finalPrice: effectivePrice(i.price) }));
             const shippingFeeAtOrder = getShippingFee(), isFreeshipAtOrder = isFreeship();
             
