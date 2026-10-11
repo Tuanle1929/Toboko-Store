@@ -1439,10 +1439,13 @@
           ${shippingRowHTML(getShippingFee(), isFreeship())}
           <div class="s-row s-total"><span>Tổng thanh toán</span><span>${fmt(cartTotal() + getShippingFee())}</span></div>
         </div>
-        <div class="field"><label>Họ và tên *</label><input type="text" id="fName" placeholder="Tên người nhận" autocomplete="name"></div>
-        <div class="field"><label>Số điện thoại *</label><input type="tel" id="fPhone" placeholder="09xx xxx xxx" autocomplete="tel"></div>
-        <div class="field"><label>Địa chỉ nhận hàng *</label><input type="text" id="fAddress" placeholder="Số nhà, Phường, Quận, TP..." autocomplete="street-address"></div>
-        <div class="field"><label>Ghi chú (Tùy chọn)</label><textarea id="fNote" rows="2" placeholder="Giao giờ hành chính..."></textarea></div>
+        <div style="display:none; position:absolute; left:-9999px;">
+          <input type="text" id="fWebsite" name="hp_website" tabindex="-1" autocomplete="off">
+        </div>
+        <div class="field"><label>Họ và tên *</label><input type="text" id="fName" maxlength="100" placeholder="Tên người nhận" autocomplete="name"></div>
+        <div class="field"><label>Số điện thoại *</label><input type="tel" id="fPhone" maxlength="15" placeholder="09xx xxx xxx" autocomplete="tel"></div>
+        <div class="field"><label>Địa chỉ nhận hàng *</label><input type="text" id="fAddress" maxlength="300" placeholder="Số nhà, Phường, Quận, TP..." autocomplete="street-address"></div>
+        <div class="field"><label>Ghi chú (Tùy chọn)</label><textarea id="fNote" rows="2" maxlength="500" placeholder="Giao giờ hành chính..."></textarea></div>
         <button class="btn" id="submitOrderBtn" style="margin-top:8px;">Hoàn tất đặt hàng</button>
       </div>`;
     app.innerHTML = html;
@@ -1485,13 +1488,17 @@
             const shippingFeeAtOrder = getShippingFee(), isFreeshipAtOrder = isFreeship();
             
             fetch(WEB_APP_URL, {
-              method: 'POST', body: JSON.stringify({ orderId, customerName: n, phone: phoneDigits, address: a, note: document.getElementById('fNote').value, items: orderedItems, total: cartTotal(), shippingStatus: isFreeshipAtOrder ? 'Freeship' : 'Khách trả ship', shippingFee: shippingFeeAtOrder, createdAt: new Date().toLocaleString('vi-VN') })
+              method: 'POST', body: JSON.stringify({ orderId, customerName: n, phone: phoneDigits, address: a, note: document.getElementById('fNote').value, hp_website: document.getElementById('fWebsite').value, items: orderedItems, total: cartTotal(), shippingStatus: isFreeshipAtOrder ? 'Freeship' : 'Khách trả ship', shippingFee: shippingFeeAtOrder, createdAt: new Date().toLocaleString('vi-VN') })
             }).then(res => res.json()).then(result => {
                 if (!result?.success) throw new Error(result?.error || 'Server từ chối đơn hàng');
                 state.lastOrderId = orderId; state.lastOrderItems = orderedItems; state.lastOrderTotal = cartTotal();
                 state.lastOrderShippingFee = shippingFeeAtOrder; state.lastOrderIsFreeship = isFreeshipAtOrder;
                 state.cart = []; updateCartBadge(); go('success');
-            }).catch(() => { btn.disabled = false; btn.textContent = 'Hoàn tất đặt hàng'; toast('Đặt hàng chưa thành công, bạn thử lại giúp mình nhé 🙏'); });
+            }).catch(err => { 
+                btn.disabled = false; btn.textContent = 'Hoàn tất đặt hàng'; 
+                var msg = (err && err.message && !err.message.includes('Server từ chối')) ? err.message : 'Đặt hàng chưa thành công, bạn thử lại giúp mình nhé 🙏';
+                toast(msg); 
+            });
           });
       }
   });
