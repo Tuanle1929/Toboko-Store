@@ -333,7 +333,6 @@
     .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .brand { font-size: 17px; white-space: nowrap; gap: 8px; }
     .header-inner { padding: 12px 14px; gap: 4px; }
-    .wrap { padding: 0 14px; }
     .cart-btn { padding: 8px 12px; font-size: 13px; }
   }
 </style>
@@ -397,7 +396,7 @@
   const LOW_STOCK_THRESHOLD = 10; 
   const DEFAULT_VARIANT_LABEL = 'Mặc định'; 
   const SHIPPING_FEE = 20000;
-  const SHIPPING_FREE_THRESHOLD = 10;
+  const SHIPPING_FREE_THRESHOLD = 5;
 
   const esc = str => String(str ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
   const fmt = n => (typeof n === 'number' && !isNaN(n) ? n : 0).toLocaleString('vi-VN') + '₫';
@@ -475,21 +474,32 @@
   const tierProgressHTML = (baseQty, previewQty = 0, startWidth = '0%') => {
     const totalQty = baseQty + previewQty;
 
-    // Bảng mốc gộp: discount tiers + freeship milestone, sắp xếp tăng dần
+    // Bảng mốc gộp: tự động hợp nhất nếu mốc Freeship trùng với mốc Giá sỉ (cùng min = 5)
     const activeTiers = state.discountTiers.filter(t => t.discount > 0);
-    const milestones = [
-      ...activeTiers.map(t => ({ min: t.min, type: 'discount', discount: t.discount })),
-      { min: SHIPPING_FREE_THRESHOLD, type: 'freeship' }
-    ].sort((a, b) => a.min - b.min);
+    const milestoneMap = new Map();
 
-    // Tìm mốc target: milestone đầu tiên có min >= totalQty (dùng >= để bắt đúng mốc vừa đạt)
+    activeTiers.forEach(t => {
+      milestoneMap.set(t.min, { min: t.min, type: 'discount', discount: t.discount });
+    });
+
+    if (milestoneMap.has(SHIPPING_FREE_THRESHOLD)) {
+      const existing = milestoneMap.get(SHIPPING_FREE_THRESHOLD);
+      existing.type = 'both'; // Vừa giảm sỉ vừa Freeship ở cùng 1 mốc
+    } else {
+      milestoneMap.set(SHIPPING_FREE_THRESHOLD, { min: SHIPPING_FREE_THRESHOLD, type: 'freeship', discount: 0 });
+    }
+
+    const milestones = Array.from(milestoneMap.values()).sort((a, b) => a.min - b.min);
+    const firstDiscountMin = activeTiers.length ? Math.min(...activeTiers.map(t => t.min)) : Infinity;
+
+    // Tìm mốc target: milestone đầu tiên có min >= totalQty
     let targetIdx = milestones.findIndex(m => m.min >= totalQty);
 
     // Nếu không tìm thấy → đã vượt tất cả mốc
     if (targetIdx === -1) {
       return `
         <div class="tier-progress tier-progress-max">
-          <div class="tier-progress-row"><span class="tier-progress-icon">🎉</span><span class="tier-progress-text">Đang hưởng <b style="color:var(--primary);">Freeship</b> và mức giảm giá sỉ cao nhất!</span></div>
+          <div class="tier-progress-row"><span class="tier-progress-icon">🎉</span><span class="tier-progress-text">Đang hưởng <b style="color:var(--primary);">Giá sỉ + Freeship</b> mức cao nhất!</span></div>
           <div class="tier-progress-track"><div class="tier-progress-fill" data-w="100%" style="width:${startWidth};"></div></div>
         </div>`;
     }
@@ -503,17 +513,19 @@
       if (nextIdx >= milestones.length) {
         return `
           <div class="tier-progress tier-progress-max">
-            <div class="tier-progress-row"><span class="tier-progress-icon">🎉</span><span class="tier-progress-text">Đang hưởng <b style="color:var(--primary);">Freeship</b> và mức giảm giá sỉ cao nhất!</span></div>
+            <div class="tier-progress-row"><span class="tier-progress-icon">🎉</span><span class="tier-progress-text">Đang hưởng <b style="color:var(--primary);">Giá sỉ + Freeship</b> mức cao nhất!</span></div>
             <div class="tier-progress-track"><div class="tier-progress-fill" data-w="100%" style="width:${startWidth};"></div></div>
           </div>`;
       }
       targetIdx = nextIdx;
       target = milestones[targetIdx];
       const neededNext = target.min - totalQty;
-      const icon = target.type === 'freeship' ? '🚚' : '🛒';
-      const msgNext = target.type === 'freeship'
-        ? `Thêm <b>${neededNext}</b> sản phẩm nữa để được <b style="color:var(--primary);">Freeship</b>`
-        : `Thêm <b>${neededNext}</b> sản phẩm nữa để được giảm thêm <b>${target.discount/1000}k/SP</b>!`;
+      const icon = target.type === 'both' ? '🎁' : (target.type === 'freeship' ? '🚚' : '🛒');
+      const msgNext = target.type === 'both'
+        ? `Thêm <b>${neededNext}</b> sản phẩm nữa để được <b style="color:var(--primary);">Giá sỉ + Freeship</b>!`
+        : (target.type === 'freeship'
+            ? `Thêm <b>${neededNext}</b> sản phẩm nữa để được <b style="color:var(--primary);">Freeship</b>`
+            : `Thêm <b>${neededNext}</b> sản phẩm nữa để được giảm thêm <b style="color:var(--primary);">${target.discount/1000}k/SP</b>!`);
       return `
         <div class="tier-progress">
           <div class="tier-progress-row"><span class="tier-progress-icon">${icon}</span><span class="tier-progress-text">${msgNext}</span><span class="tier-progress-count">${totalQty}/${target.min} SP</span></div>
@@ -531,12 +543,19 @@
 
     // === CASE A: preview vừa đủ mốc, chưa thêm vào giỏ ===
     if (totalQty === target.min && previewQty > 0) {
-      icon = target.type === 'freeship' ? '🚚' : '🛒';
-      msg = target.type === 'freeship'
-        ? `Đủ điều kiện <b style="color:var(--primary);">Freeship</b>! Thêm vào giỏ để áp dụng.`
-        : `Bạn đủ điều kiện giảm giá rồi! Thêm vào giỏ hàng để được áp dụng nha`;
+      icon = target.type === 'both' ? '🎁' : (target.type === 'freeship' ? '🚚' : '🛒');
+      msg = target.type === 'both'
+        ? `Đủ điều kiện <b style="color:var(--primary);">Giá sỉ + Freeship</b>! Thêm vào giỏ để áp dụng nha`
+        : (target.type === 'freeship'
+            ? `Đủ điều kiện <b style="color:var(--primary);">Freeship</b>! Thêm vào giỏ để áp dụng.`
+            : `Bạn đủ điều kiện giảm giá rồi! Thêm vào giỏ hàng để được áp dụng nha`);
 
     // === CASE C: đang tiến đến mốc ===
+    } else if (target.type === 'both') {
+      icon = '🎁';
+      msg = totalQty === 0
+        ? `Mua từ <b>${target.min}</b> sản phẩm để được <b style="color:var(--primary);">Giá sỉ + Freeship</b>`
+        : `Thêm <b>${needed}</b> sản phẩm nữa để được <b style="color:var(--primary);">Giá sỉ + Freeship</b>!`;
     } else if (target.type === 'freeship') {
       icon = '🚚';
       msg = totalQty === 0
@@ -544,15 +563,15 @@
         : `Thêm <b>${needed}</b> sản phẩm nữa để được <b style="color:var(--primary);">Freeship</b>`;
     } else {
       icon = '🛒';
-      const isFirst = targetIdx === 0; // Mốc 5 SP (giá sỉ đầu tiên)
+      const isFirstDiscount = target.min === firstDiscountMin;
       if (totalQty === 0) {
-        msg = isFirst
-          ? `Mua từ <b>${target.min}</b> sản phẩm để được giá sỉ`
-          : `Mua từ <b>${target.min}</b> sản phẩm để được giảm sỉ <b>${target.discount/1000}k/SP</b>`;
+        msg = isFirstDiscount
+          ? `Mua từ <b>${target.min}</b> sản phẩm để được <b style="color:var(--primary);">Giá sỉ</b>`
+          : `Mua từ <b>${target.min}</b> sản phẩm để được giảm sỉ <b style="color:var(--primary);">${target.discount/1000}k/SP</b>`;
       } else {
-        msg = isFirst
-          ? `Thêm <b>${needed}</b> sản phẩm nữa để được giá sỉ`
-          : `Thêm <b>${needed}</b> sản phẩm nữa để được giảm thêm <b>${target.discount/1000}k/SP</b>!`;
+        msg = isFirstDiscount
+          ? `Thêm <b>${needed}</b> sản phẩm nữa để được <b style="color:var(--primary);">Giá sỉ</b>`
+          : `Thêm <b>${needed}</b> sản phẩm nữa để được giảm thêm <b style="color:var(--primary);">${target.discount/1000}k/SP</b>!`;
       }
     }
 
@@ -577,17 +596,34 @@
   };
 
   const notifyDiscountChange = (oldDiscount, wasFreeship) => {
-    const newDiscount = getCurrentDiscount(), nowFreeship = isFreeship();
+    const newDiscount = getCurrentDiscount(), nowFreeship = isFreeship(), curQty = cartTotalQty();
     if (newDiscount > oldDiscount) {
       toast(nowFreeship && !wasFreeship ? `🎉 Tuyệt vời! Bạn được Freeship và giảm ${newDiscount/1000}k/SP!` : `🎉 Tuyệt vời, giảm ${newDiscount/1000}k cho tất cả sản phẩm!`);
     } else if (newDiscount < oldDiscount) {
-      const needed = (state.discountTiers.slice().reverse().find(t => t.min > cartTotalQty() && t.discount > 0) || {}).min - cartTotalQty();
+      const higherTiers = state.discountTiers.filter(t => t.min > curQty && t.discount > 0);
+      const nextTierMin = higherTiers.length ? Math.min(...higherTiers.map(t => t.min)) : Math.max(SHIPPING_FREE_THRESHOLD, curQty + 1);
+      const needed = Math.max(1, nextTierMin - curQty);
       toast(wasFreeship && !nowFreeship ? `Đã mất freeship và mốc giảm ${oldDiscount/1000}k/SP, mua thêm ${needed} SP để nhận lại ưu đãi nhé!` : `Vừa rời mốc giảm ${oldDiscount/1000}k/SP, mua thêm ${needed} SP để nhận lại nhé!`);
     } else if (wasFreeship && !nowFreeship) {
-      toast(`Vừa mất ưu đãi freeship, mua thêm ${SHIPPING_FREE_THRESHOLD - cartTotalQty()} SP nữa nhé!`);
+      toast(`Vừa mất ưu đãi freeship, mua thêm ${Math.max(1, SHIPPING_FREE_THRESHOLD - curQty)} SP nữa nhé!`);
     } else if (!wasFreeship && nowFreeship) {
       toast(`🎉 Tuyệt vời, bạn vừa được Freeship cho đơn hàng này!`);
     }
+  };
+
+  // Chỉ cho phép URL http/https hoặc đường dẫn file ảnh nội bộ, chặn đứng javascript: và data: độc hại
+  const sanitizeUrl = url => {
+    const s = String(url ?? '').trim();
+    if (!s) return '';
+    if (/^(https?:\/\/|\/)/i.test(s)) return s;
+    if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(s)) return s; // Đường dẫn tương đối (VD: "anh-mi.jpg")
+    return '';
+  };
+
+  // Chỉ cho phép mã màu hợp lệ (#hex, rgb, hsl, tên màu chữ), chặn dấu ; và ngoặc nhọn phá vỡ CSS
+  const sanitizeColor = color => {
+    const s = String(color ?? '').trim();
+    return /^(#[0-9a-fA-F]{3,8}|rgba?\([\d\s,.%/]+\)|hsla?\([\d\s,.%/]+\)|[a-zA-Z]{3,20})$/.test(s) ? s : '#f2eef4';
   };
 
   const normalizeProduct = p => {
@@ -595,6 +631,13 @@
     p.variants = Array.isArray(p.variants) ? p.variants : [];
     p.tags = Array.isArray(p.tags) ? p.tags : (typeof p.tags === 'string' ? p.tags.split(',').map(t => t.trim()).filter(Boolean) : []);
     p.totalStock = isNaN(Number(p.totalStock)) ? 0 : Number(p.totalStock);
+    p.color = sanitizeColor(p.color);
+    p.image = sanitizeUrl(p.image);
+    if (p.variantImages && typeof p.variantImages === 'object') {
+      Object.keys(p.variantImages).forEach(k => {
+        p.variantImages[k] = sanitizeUrl(p.variantImages[k]);
+      });
+    }
     return p;
   };
 
@@ -800,7 +843,7 @@
   const renderHome = () => {
     let html = `
       <div class="hero"><h1>Dành cho bạn</h1><p>Hơn 300+ mã mi giả và phụ kiện làm đẹp.</p></div>
-      <div class="wholesale-notice"><b>Mẹo nhỏ cho bạn:</b> <br>Giá sỉ tự động khi bạn chọn từ 5 sản phẩm.<br>Miễn phí ship cho đơn hàng từ 10 sản phẩm.</div>
+      <div class="wholesale-notice"><b>Mẹo nhỏ cho bạn:</b> <br>Giá sỉ tự động và miễn phí ship cho đơn hàng từ 5 sản phẩm.</div>
     `;
 
     if (state.productsError) html += `<div class="inv-banner" style="background:#ffe6eb;color:var(--danger);">⚠️ Lỗi kết nối dữ liệu. Vui lòng tải lại trang.</div>`;
@@ -967,7 +1010,7 @@
       </div></div></div>`;
 
     app.innerHTML = html;
-    setTimeout(() => document.querySelectorAll('.tier-progress-fill').forEach(el => el.style.width = el.dataset.w), 10);
+    setTimeout(() => app.querySelectorAll('.tier-progress-fill').forEach(el => el.style.width = el.dataset.w), 10);
     scheduleSyncDetailBottomPadding();
 
     const wrapEl = document.getElementById('tierProgressWrapper');
@@ -1345,14 +1388,14 @@
           </div>
         </div>`;
     }).join('');
-    setTimeout(() => document.querySelectorAll('.tier-progress-fill').forEach(el => el.style.width = el.dataset.w), 10);
+    setTimeout(() => document.getElementById('drawerBody')?.querySelectorAll('.tier-progress-fill').forEach(el => el.style.width = el.dataset.w), 10);
     
     const rawSubtotal = state.cart.reduce((s, i) => s + i.price * i.qty, 0);
     const finalTotal = cartTotal(), discountTotal = rawSubtotal - finalTotal, shippingFee = getShippingFee();
     
     drawerFoot.innerHTML = `
       <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px; color:var(--text);"><span>Tạm tính</span><span>${fmt(rawSubtotal)}</span></div>
-      ${discountTotal > 0 ? `<div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px; color:var(--text);"><span>Giảm giá sỉ</span><span>- ${fmt(discountTotal)}</span></div>` : ''}
+      ${discountTotal > 0 ? `<div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px; color:var(--text);"><span>Giảm giá sỉ</span><span style="color:var(--primary); font-weight:800;">- ${fmt(discountTotal)}</span></div>` : ''}
       <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px; color:var(--text);"><span>Phí ship (tạm tính)</span><span>${isFreeship() ? '<span style="color:var(--primary); font-weight:800;">Miễn phí</span>' : fmt(shippingFee)}</span></div>
       <div style="display:flex; justify-content:space-between; font-weight:800; font-size:17px; margin-bottom:14px; border-top:1px dashed var(--border); padding-top:10px;"><span>Tổng thanh toán</span><span style="color:var(--primary);">${fmt(finalTotal + shippingFee)}</span></div>
       <button class="btn" id="checkoutBtn">Tiếp tục thanh toán</button>
@@ -1367,6 +1410,7 @@
       
       const key = row.dataset.key;
       const item = state.cart.find(i => i.key === key);
+      if (!item) return;
       const maxStock = getStock(item.name, item.variant);
       const oldDiscount = getCurrentDiscount(), wasFreeship = isFreeship();
 
@@ -1389,7 +1433,9 @@
   document.getElementById('drawerBody').addEventListener('change', e => {
       if (e.target.classList.contains('mq-input')) {
           const row = e.target.closest('.cart-item');
+          if (!row) return;
           const item = state.cart.find(i => i.key === row.dataset.key);
+          if (!item) return;
           const maxStock = getStock(item.name, item.variant);
           const oldDiscount = getCurrentDiscount(), wasFreeship = isFreeship();
           
@@ -1435,7 +1481,7 @@
           }).join('')}
           <div style="border-top: 1px dashed var(--border); margin-top: 12px; padding-top: 12px;"></div>
           <div class="s-row"><span>Tạm tính</span><span>${fmt(rawSubtotal)}</span></div>
-          ${rawSubtotal - cartTotal() > 0 ? `<div class="s-row" style="color:var(--text);"><span>Giảm giá sỉ</span><span>- ${fmt(rawSubtotal - cartTotal())}</span></div>` : ''}
+          ${rawSubtotal - cartTotal() > 0 ? `<div class="s-row" style="color:var(--text);"><span>Giảm giá sỉ</span><span style="color:var(--primary); font-weight:800;">- ${fmt(rawSubtotal - cartTotal())}</span></div>` : ''}
           ${shippingRowHTML(getShippingFee(), isFreeship())}
           <div class="s-row s-total"><span>Tổng thanh toán</span><span>${fmt(cartTotal() + getShippingFee())}</span></div>
         </div>
@@ -1457,6 +1503,9 @@
           const n = document.getElementById('fName').value.trim(), p = document.getElementById('fPhone').value.trim(), a = document.getElementById('fAddress').value.trim();
           if (!n || !p || !a) return toast('Bạn điền giúp mình đủ các thông tin bắt buộc nhé');
           let phoneDigits = p.replace(/[\s.\-\+]/g, ''); 
+          if (phoneDigits.startsWith('0084') && phoneDigits.length === 13) {
+            phoneDigits = '0' + phoneDigits.slice(4);
+          }
           if (phoneDigits.startsWith('84') && phoneDigits.length === 11) {
             phoneDigits = '0' + phoneDigits.slice(2);
           }
@@ -1483,7 +1532,7 @@
             }
             
             btn.textContent = 'Đang xử lý...';
-            const orderId = 'TBK' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
+            const orderId = 'TBK' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 7).toUpperCase();
             const orderedItems = state.cart.map(i => ({ name: i.name, variant: i.variant, qty: i.qty, price: i.price, finalPrice: effectivePrice(i.price) }));
             const shippingFeeAtOrder = getShippingFee(), isFreeshipAtOrder = isFreeship();
             
@@ -1527,7 +1576,7 @@
           ${itemsHtml}
           <div style="border-top: 1px dashed var(--border); margin-top: 12px; padding-top: 12px;"></div>
           <div class="s-row"><span>Tạm tính</span><span>${fmt(rawSubtotal)}</span></div>
-          ${rawSubtotal - state.lastOrderTotal > 0 ? `<div class="s-row" style="color:var(--text);"><span>Giảm giá sỉ</span><span>- ${fmt(rawSubtotal - state.lastOrderTotal)}</span></div>` : ''}
+          ${rawSubtotal - state.lastOrderTotal > 0 ? `<div class="s-row" style="color:var(--text);"><span>Giảm giá sỉ</span><span style="color:var(--primary); font-weight:800;">- ${fmt(rawSubtotal - state.lastOrderTotal)}</span></div>` : ''}
           ${shippingRowHTML(state.lastOrderShippingFee || 0, state.lastOrderIsFreeship)}
           <div class="s-row s-total"><span>Tổng thanh toán</span><span>${fmt(grandTotal)}</span></div>
         </div>`;
@@ -1551,9 +1600,13 @@
     
     document.getElementById('continueBtn').addEventListener('click', () => go('home'));
     document.getElementById('copyOrderBtn').addEventListener('click', () => {
-      navigator.clipboard.writeText(state.lastOrderId)
-        .then(() => toast(`Đã sao chép mã đơn hàng: ${state.lastOrderId}`))
-        .catch(() => toast('Bạn chạm giữ để tự sao chép mã đơn giúp mình nhé'));
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(state.lastOrderId)
+          .then(() => toast(`Đã sao chép mã đơn hàng: ${state.lastOrderId}`))
+          .catch(() => toast('Bạn chạm giữ để tự sao chép mã đơn giúp mình nhé'));
+      } else {
+        toast('Bạn chạm giữ mã đơn để sao chép nhé');
+      }
     });
   };
 
