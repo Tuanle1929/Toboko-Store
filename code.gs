@@ -254,14 +254,19 @@ function doPost(e) {
   }
 
   try {
-    // Chống DoS: Giới hạn kích thước payload tối đa 50KB
-    if (!e || !e.postData || !e.postData.contents || e.postData.contents.length > 50000) {
+    // Chống DoS: Giới hạn kích thước payload tối đa 200KB
+    if (!e || !e.postData || !e.postData.contents || e.postData.contents.length > 200000) {
       throw new Error('Dữ liệu yêu cầu không hợp lệ hoặc vượt quá dung lượng cho phép.');
     }
 
     var body = JSON.parse(e.postData.contents);
     if (!body || typeof body !== 'object') {
       throw new Error('Định dạng yêu cầu không đúng.');
+    }
+
+    // Xử lý lệnh đồng bộ tồn kho từ Admin (File Excel)
+    if (body.action === 'syncInventory') {
+      return _handleSyncInventory(body);
     }
 
     // Chống Spam Bot: Bẫy Honeypot
@@ -409,6 +414,51 @@ function doPost(e) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function _handleSyncInventory(body) {
+  if (body.secretKey !== 'TBK_STOCK_SYNC_2026') {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Không có quyền cập nhật tồn kho.' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  var updates = body.updates;
+  if (!updates || typeof updates !== 'object') {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Dữ liệu updates không hợp lệ.' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  var ss = _openSheet();
+  var invSheet = ss.getSheetByName('Inventory');
+  if (!invSheet) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Không tìm thấy tab Inventory.' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  var range = invSheet.getDataRange();
+  var data = range.getValues();
+  var updatedCount = 0;
+  var stockColIdx = 3; // Cột D (0-indexed: 0=SKU, 1=Tên SP, 2=Phân Loại, 3=SL Kho)
+
+  for (var i = 1; i < data.length; i++) {
+    var rawSku = data[i][0] ? String(data[i][0]).trim().toUpperCase() : '';
+    if (!rawSku) continue;
+
+    if (Object.prototype.hasOwnProperty.call(updates, rawSku)) {
+      var newStock = Math.max(0, parseInt(updates[rawSku], 10) || 0);
+      data[i][stockColIdx] = newStock;
+      updatedCount++;
+    }
+  }
+
+  range.setValues(data);
+  SpreadsheetApp.flush();
+
+  return ContentService.createTextOutput(JSON.stringify({
+    success: true,
+    updatedCount: updatedCount,
+    message: 'Đã cập nhật thành công tồn kho cho ' + updatedCount + ' mã SKU.'
+  })).setMimeType(ContentService.MimeType.JSON);
 }
 
 function _ensureDonHangHeader(sheet) {
