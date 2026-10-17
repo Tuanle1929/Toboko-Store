@@ -45,7 +45,7 @@
 
   .brand { grid-column: 1 / span 2; justify-self: start; color: var(--primary); text-shadow: -1px 0.5px 1px rgb(78 2 47 / 61%); display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; cursor: pointer; letter-spacing: -0.3px; }
   .brand-logo { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
-  .cart-btn { grid-column: 3; justify-self: end; position: relative; border: 1.5px solid var(--border); background: var(--surface); border-radius: 999px; padding: 9px 16px; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow-sm); color: var(--text); transition: all 0.2s; }
+  .cart-btn { position: relative; border: 1.5px solid var(--border); background: var(--surface); border-radius: 999px; padding: 9px 16px; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow-sm); color: var(--text); transition: all 0.2s; white-space: nowrap; }
   .cart-btn:active { background: var(--surface-2); }
   @keyframes cartBump {
     0% { transform: scale(1); }
@@ -119,9 +119,13 @@
   .preview-thumb.oos img { opacity: 0.65; }
   .preview-oos-badge { position: absolute; inset: 0; background: rgba(45, 26, 54, 0.65); color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 9px; pointer-events: none; letter-spacing: -0.2px; }
   .oos-tag-inline { font-size: 12px; color: var(--danger); font-weight: 700; margin-left: 6px; }
-  .preview-text { min-width: 0; }
-  .preview-text b { display: block; font-size: 17px; font-weight: 800; }
+  .preview-text { flex: 1; min-width: 0; }
+  .preview-top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; width: 100%; }
+  .preview-text b { font-size: 17px; font-weight: 800; line-height: 1.3; min-width: 0; word-break: break-word; }
   .preview-text span { display: block; font-size: 19px; color: var(--text-muted); margin-top: 1px; }
+  .preview-stock { font-size: 13.5px !important; font-weight: 700; color: var(--text-muted); display: inline-block !important; white-space: nowrap; flex-shrink: 0; line-height: 1.3; margin-top: 0 !important; padding-top: 2px; }
+  .preview-stock.low { color: #EA75A2; }
+  .preview-stock.oos { color: var(--danger); }
   .preview-empty { font-size: 12.5px; color: var(--text-muted); padding: 4px 6px; }
 
   @media (max-width: 768px) { .variant-preview { position: sticky; top: var(--header-h); z-index: 30; box-shadow: 3px 7px 16px 0px rgb(56 0 78 / 16%); } }
@@ -332,9 +336,66 @@
   @media (max-width: 480px) {
     .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .brand { font-size: 17px; white-space: nowrap; gap: 8px; }
-    .header-inner { padding: 12px 14px; gap: 4px; }
-    .cart-btn { padding: 8px 12px; font-size: 13px; }
+    .header-inner { padding: 12px 14px; gap: 6px; }
+    .header-actions { gap: 6px; }
+    .cart-btn { padding: 8px 11px; font-size: 12.5px; }
+    .header-icon-btn { width: 36px; height: 36px; }
   }
+
+  /* Header Search & Actions */
+  .header-actions { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 8px; }
+  .header-icon-btn { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); padding: 0; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); flex-shrink: 0; }
+  .header-icon-btn:hover { background: var(--surface-2); color: var(--primary); border-color: var(--primary); transform: translateY(-1px); }
+  .header-icon-btn:active { transform: scale(0.94); }
+
+  /* Expandable Header Search Overlay */
+  header.site.search-open { z-index: 70; }
+  .header-search-overlay { position: absolute; inset: 0; background: rgba(253, 250, 252, 0.98); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 0 16px; display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; pointer-events: none; transform: translateY(-6px); transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+  header.site.search-open .header-search-overlay { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  .header-search-bar { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 1080px; margin: 0 auto; }
+  .search-input-box { flex: 1; display: flex; align-items: center; background: #fff; border: 1.5px solid var(--primary); border-radius: 10px; padding: 0 12px; height: 42px; box-shadow: 0 2px 8px rgba(196, 65, 141, 0.12); transition: border-color 0.2s, box-shadow 0.2s; }
+  .search-input-box:focus-within { box-shadow: 0 0 0 3px rgba(196, 65, 141, 0.2); }
+  .search-icon-svg { color: var(--text-muted); margin-right: 8px; flex-shrink: 0; }
+  .header-search-input { flex: 1; border: none; background: transparent; font-family: inherit; font-size: 16px; color: var(--text); outline: none; min-width: 0; padding: 0; }
+  .header-search-input::placeholder { color: #a494ab; font-size: 13.5px; }
+  .header-search-clear { background: #bbb0c0; border: none; color: #fff; width: 18px; height: 18px; border-radius: 50%; font-size: 11px; display: none; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; padding: 0; margin-left: 6px; transition: background 0.15s; line-height: 1; }
+  .header-search-clear.show { display: flex; }
+  .header-search-clear:hover { background: #928399; }
+  .header-search-close-btn { background: none; border: none; color: var(--primary); font-size: 14.5px; font-weight: 700; padding: 6px 8px; cursor: pointer; white-space: nowrap; flex-shrink: 0; border-radius: 8px; transition: opacity 0.15s; }
+  .header-search-close-btn:active { opacity: 0.7; }
+
+  /* Dimming Backdrop */
+  .search-backdrop { position: fixed; inset: 0; top: 0; background: rgba(45, 26, 54, 0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 65; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+  header.site.search-open ~ .search-backdrop { opacity: 1; pointer-events: auto; }
+
+  /* Floating Search Results Dropdown */
+  .search-dropdown-wrap { position: absolute; top: 100%; left: 0; right: 0; opacity: 0; pointer-events: none; visibility: hidden; transform: translateY(-8px); transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.22s; z-index: 45; }
+  header.site.search-open .search-dropdown-wrap { opacity: 1; pointer-events: auto; visibility: visible; transform: translateY(0); }
+  .search-dropdown { max-width: 640px; margin: 6px auto 0; padding: 0 12px; }
+  .search-dropdown-content { background: #fff; border: 1.5px solid var(--border); border-radius: 12px; box-shadow: 0 16px 40px rgba(103, 52, 123, 0.16); max-height: min(65vh, 460px); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 6px; }
+
+  /* Search Dropdown Items (Sapo-style Clean List) */
+  .search-item { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s ease; border-bottom: 1px solid rgba(232, 224, 235, 0.5); }
+  .search-item:last-child { border-bottom: none; }
+  .search-item:hover { background: #fdf5f9; }
+  .search-item-thumb { width: 44px; height: 44px; border-radius: 8px; flex-shrink: 0; overflow: hidden; border: 1px solid var(--border); background: #fdfafc; display: flex; align-items: center; justify-content: center; font-size: 20px; position: relative; }
+  .search-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .search-item-thumb.oos img { opacity: 0.55; }
+  .search-item-thumb .search-oos-badge { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 8px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .search-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; justify-content: center; }
+  .search-item-name { font-weight: 600; font-size: 13.5px; color: var(--text); line-height: 1.35; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .search-item-meta { display: flex; align-items: center; gap: 8px; margin-top: 1px; }
+  .search-item-price { font-size: 13px; color: var(--primary); font-weight: 700; display: flex; align-items: baseline; gap: 6px; margin: 0; }
+  .search-item-price .price-old { font-size: 11px; color: var(--text-muted); font-weight: 500; text-decoration: line-through; }
+  .search-item-price .price-new { color: var(--accent); font-weight: 800; }
+  .search-item-tag { font-size: 11px; font-weight: 700; color: var(--primary); background: #fff0f6; border: 1px solid rgba(196, 65, 141, 0.25); border-radius: 4px; padding: 1.5px 6px; line-height: 1.2; letter-spacing: 0.2px; }
+  .search-empty-state { text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 14px; line-height: 1.5; }
+  .search-prompt-state { text-align: center; padding: 20px 12px; color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+  .search-prompt-tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 10px; }
+  .search-prompt-tag { background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; padding: 4px 11px; font-size: 12px; font-weight: 600; color: var(--text); cursor: pointer; transition: all 0.15s; }
+  .search-prompt-tag:hover { background: #f1dbed; border-color: var(--primary); color: var(--primary); }
+  .search-prompt-tag.recent { background: #fff; border-color: #d8cde0; color: var(--text-muted); font-weight: 500; }
+  .search-prompt-tag.recent:hover { background: #fdf5f9; color: var(--primary); border-color: var(--primary); }
 </style>
 </head>
 <body>
@@ -348,9 +409,38 @@
       <img src="Logo Toboko.jpg" class="brand-logo" alt="Toboko Store">
       <span class="brand-text">Toboko Store</span>
     </div>
-    <button class="cart-btn" id="cartBtn">🛒 Giỏ hàng<span class="cart-badge" id="cartBadge" style="display:none;">0</span></button>
+    <div class="header-actions">
+      <button class="header-icon-btn" id="searchOpenBtn" aria-label="Tìm kiếm sản phẩm" type="button">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+      <button class="cart-btn" id="cartBtn">🛒 Giỏ hàng<span class="cart-badge" id="cartBadge" style="display:none;">0</span></button>
+    </div>
+  </div>
+
+  <div class="header-search-overlay" id="headerSearchOverlay">
+    <div class="header-search-bar">
+      <div class="search-input-box">
+        <svg class="search-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="headerSearchInput" class="header-search-input" placeholder="Tìm tên mi, mã số, keo dán..." autocomplete="off">
+        <button class="header-search-clear" id="headerSearchClear" type="button" aria-label="Xóa nội dung tìm kiếm">✕</button>
+      </div>
+      <button class="header-search-close-btn" id="headerSearchClose" type="button">Đóng</button>
+    </div>
+  </div>
+
+  <div class="search-dropdown-wrap" id="searchDropdownWrap">
+    <div class="search-dropdown">
+      <div class="search-dropdown-content" id="searchDropdownContent"></div>
+    </div>
   </div>
 </header>
+<div class="search-backdrop" id="searchBackdrop"></div>
 
 <main class="wrap" id="app"></main>
 
@@ -499,7 +589,7 @@
     if (targetIdx === -1) {
       return `
         <div class="tier-progress tier-progress-max">
-          <div class="tier-progress-row"><span class="tier-progress-icon">🎉</span><span class="tier-progress-text">Đang hưởng <b style="color:var(--primary);">Giá sỉ + Freeship</b> mức cao nhất!</span></div>
+          <div class="tier-progress-row"><span class="tier-progress-text">Đang hưởng <b style="color:var(--primary);">Giá sỉ + Freeship</b> mức cao nhất!</span></div>
           <div class="tier-progress-track"><div class="tier-progress-fill" data-w="100%" style="width:${startWidth};"></div></div>
         </div>`;
     }
@@ -513,14 +603,13 @@
       if (nextIdx >= milestones.length) {
         return `
           <div class="tier-progress tier-progress-max">
-            <div class="tier-progress-row"><span class="tier-progress-icon">🎉</span><span class="tier-progress-text">Đang hưởng <b style="color:var(--primary);">Giá sỉ + Freeship</b> mức cao nhất!</span></div>
+            <div class="tier-progress-row"><span class="tier-progress-text">Đang hưởng <b style="color:var(--primary);">Giá sỉ + Freeship</b> mức cao nhất!</span></div>
             <div class="tier-progress-track"><div class="tier-progress-fill" data-w="100%" style="width:${startWidth};"></div></div>
           </div>`;
       }
       targetIdx = nextIdx;
       target = milestones[targetIdx];
       const neededNext = target.min - totalQty;
-      const icon = target.type === 'both' ? '🎁' : (target.type === 'freeship' ? '🚚' : '🛒');
       const msgNext = target.type === 'both'
         ? `Thêm <b>${neededNext}</b> sản phẩm nữa để được <b style="color:var(--primary);">Giá sỉ + Freeship</b>!`
         : (target.type === 'freeship'
@@ -528,7 +617,7 @@
             : `Thêm <b>${neededNext}</b> sản phẩm nữa để được giảm thêm <b style="color:var(--primary);">${target.discount/1000}k/SP</b>!`);
       return `
         <div class="tier-progress">
-          <div class="tier-progress-row"><span class="tier-progress-icon">${icon}</span><span class="tier-progress-text">${msgNext}</span><span class="tier-progress-count">${totalQty}/${target.min} SP</span></div>
+          <div class="tier-progress-row"><span class="tier-progress-text">${msgNext}</span><span class="tier-progress-count">${totalQty}/${target.min} SP</span></div>
           <div class="tier-progress-track"><div class="tier-progress-fill" data-w="0%" style="width:${startWidth};"></div></div>
         </div>`;
     }
@@ -539,11 +628,10 @@
       ? 100
       : Math.max(0, Math.min(100, ((totalQty - prevMin) / (target.min - prevMin)) * 100));
 
-    let icon, msg;
+    let msg;
 
     // === CASE A: preview vừa đủ mốc, chưa thêm vào giỏ ===
     if (totalQty === target.min && previewQty > 0) {
-      icon = target.type === 'both' ? '🎁' : (target.type === 'freeship' ? '🚚' : '🛒');
       msg = target.type === 'both'
         ? `Đủ điều kiện <b style="color:var(--primary);">Giá sỉ + Freeship</b>! Thêm vào giỏ để áp dụng nha`
         : (target.type === 'freeship'
@@ -552,17 +640,14 @@
 
     // === CASE C: đang tiến đến mốc ===
     } else if (target.type === 'both') {
-      icon = '🎁';
       msg = totalQty === 0
         ? `Mua từ <b>${target.min}</b> sản phẩm để được <b style="color:var(--primary);">Giá sỉ + Freeship</b>`
         : `Thêm <b>${needed}</b> sản phẩm nữa để được <b style="color:var(--primary);">Giá sỉ + Freeship</b>!`;
     } else if (target.type === 'freeship') {
-      icon = '🚚';
       msg = totalQty === 0
         ? `Mua từ <b>${target.min}</b> sản phẩm để được <b style="color:var(--primary);">Freeship</b>`
         : `Thêm <b>${needed}</b> sản phẩm nữa để được <b style="color:var(--primary);">Freeship</b>`;
     } else {
-      icon = '🛒';
       const isFirstDiscount = target.min === firstDiscountMin;
       if (totalQty === 0) {
         msg = isFirstDiscount
@@ -577,7 +662,7 @@
 
     return `
       <div class="tier-progress">
-        <div class="tier-progress-row"><span class="tier-progress-icon">${icon}</span><span class="tier-progress-text">${msg}</span><span class="tier-progress-count">${totalQty}/${target.min} SP</span></div>
+        <div class="tier-progress-row"><span class="tier-progress-text">${msg}</span><span class="tier-progress-count">${totalQty}/${target.min} SP</span></div>
         <div class="tier-progress-track"><div class="tier-progress-fill" data-w="${pct}%" style="width:${startWidth};"></div></div>
       </div>`;
   };
@@ -684,12 +769,35 @@
   };
 
   const loadInitialData = () => {
-    history.replaceState({ view: state.view, productId: state.productId }, '', window.location.href);
     render(); 
     fetchShopData().then(ok => {
       state.productsLoading = false;
       if (!ok && !WEB_APP_URL.includes('AKfycb...')) state.productsError = true; 
+
+      // Đọc URL xem khách có đang mở link con (?sp=...&ma=...) không
+      const urlParams = new URLSearchParams(window.location.search);
+      const spSlug = (urlParams.get('sp') || '').trim().toLowerCase();
+      const maSlug = (urlParams.get('ma') || '').trim().toLowerCase();
+
+      if (spSlug && state.products.length > 0) {
+        // Dò tìm sản phẩm khớp slug trên URL
+        const foundProd = state.products.find(p => toSlug(p.name) === spSlug);
+        if (foundProd) {
+          let matchedVar = null;
+          if (maSlug && foundProd.variants.length > 0) {
+            const foundV = foundProd.variants.find(v => toSlug(v) === maSlug);
+            if (foundV) matchedVar = foundV;
+          }
+          go('detail', { productId: foundProd.name, variant: matchedVar }, false);
+          return;
+        }
+      }
+
       render();
+      const input = document.getElementById('headerSearchInput');
+      if (input && document.getElementById('siteHeader')?.classList.contains('search-open')) {
+        renderSearchDropdown(input.value);
+      }
     });
   };
 
@@ -804,6 +912,7 @@
   })();
 
   const go = (view, params, pushHistory = true) => {
+    closeHeaderSearch();
     document.body.style.overflow = '';
     document.getElementById('overlay').classList.remove('open');
     const _d = document.getElementById('drawer');
@@ -817,28 +926,397 @@
     clearTimeout(_tierCollapseTimer);
     if (params?.productId !== undefined) state.productId = params.productId;
     if (view === 'detail') { 
-      state.selectedVariant = null; 
+      state.selectedVariant = params?.variant ? params.variant : null;
       state.qty = 1; 
       state.descExpanded = false; 
       state.tierProgressVisible = true; 
     }
     
-    const header = document.getElementById('siteHeader'), cartBtn = document.getElementById('cartBtn');
+    const header = document.getElementById('siteHeader'), cartBtn = document.getElementById('cartBtn'), searchOpenBtn = document.getElementById('searchOpenBtn');
     if (header) header.classList.toggle('sub-page', view !== 'home' && view !== 'success');
     if (cartBtn) cartBtn.style.visibility = (view === 'checkout' || view === 'success') ? 'hidden' : 'visible';
+    if (searchOpenBtn) searchOpenBtn.style.display = (view === 'home') ? 'flex' : 'none';
 
-    // Thêm animation chuyển trang
+    // Đồng bộ URL lên thanh địa chỉ để bạn dễ copy gửi link cho khách
+    let newUrl = window.location.pathname;
+    if (view === 'detail' && state.productId) {
+      newUrl += `?sp=${toSlug(state.productId)}`;
+      if (state.selectedVariant && state.selectedVariant !== DEFAULT_VARIANT_LABEL) {
+        newUrl += `&ma=${toSlug(state.selectedVariant)}`;
+      }
+    }
+
     app.classList.remove('page-transition');
-    void app.offsetWidth; // Trigger reflow
+    void app.offsetWidth; 
     app.classList.add('page-transition');
 
-    if (pushHistory) history.pushState({ view, productId: state.productId }, '', window.location.href);
+    if (pushHistory) {
+      history.pushState({ view, productId: state.productId, variant: state.selectedVariant }, '', newUrl);
+    } else {
+      history.replaceState({ view, productId: state.productId, variant: state.selectedVariant }, '', newUrl);
+    }
     render(); window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  window.addEventListener('popstate', e => go(e.state?.view || 'home', { productId: e.state?.productId }, false));
+  window.addEventListener('popstate', e => {
+    const vState = e.state;
+    if (!vState || vState.view === 'home') {
+      go('home', {}, false);
+    } else {
+      state.productId = vState.productId;
+      state.selectedVariant = vState.variant || null;
+      go(vState.view, { productId: vState.productId, variant: vState.selectedVariant }, false);
+    }
+  });
   document.getElementById('logoHome').addEventListener('click', () => go('home'));
-  document.getElementById('headerBackBtn').addEventListener('click', e => { e.preventDefault(); window.history.length > 1 ? window.history.back() : go('home'); });
+  document.getElementById('headerBackBtn').addEventListener('click', e => { 
+    e.preventDefault(); 
+    state.view !== 'home' ? go('home') : (window.history.length > 1 ? window.history.back() : go('home')); 
+  });
+
+  // Hàm bổ trợ: Loại bỏ dấu tiếng Việt để tìm kiếm không dấu chuẩn xác
+  const removeAccents = str => {
+    return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+  };
+
+  // Chuyển tên sản phẩm/phân loại thành dạng slug không dấu, ngăn cách bằng dấu gạch ngang
+  const toSlug = str => {
+    return removeAccents(str)
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+  };
+
+  // Smart Search: Từ điển đồng nghĩa và viết tắt ngành mi Toboko
+  const SEARCH_SYNONYMS = {
+    'ko': ['khong'],
+    'k': ['khong'],
+    'kh': ['khong'],
+    'dc': ['duoc'],
+    'đc': ['duoc'],
+    'sp': ['san pham'],
+    'tu dinh': ['khong keo', 'keo san', 'tu noi'],
+    'tu noi': ['khong keo', 'tu dinh'],
+    'keo san': ['khong keo', 'tu dinh'],
+    'cum': ['chum', 'cluster'],
+    'chum': ['cum'],
+    'tung soi': ['chum', 'cum'],
+    'kep': ['nhip'],
+    'nhip gap': ['nhip'],
+    'duoi': ['mi duoi']
+  };
+
+  // Fuzzy match: Cho phép sai lệch 1 ký tự đối với từ khóa từ 4 ký tự trở lên (vd: "nhisp" -> "nhip", "mises" -> "muse")
+  const isFuzzyWordMatch = (word, targetWord) => {
+    if (word === targetWord) return true;
+    if (targetWord.includes(word)) return true;
+    if (word.length < 4 || targetWord.length < 4) return false;
+    if (Math.abs(word.length - targetWord.length) > 1) return false;
+    let diff = 0, i = 0, j = 0;
+    while (i < word.length && j < targetWord.length) {
+      if (word[i] !== targetWord[j]) {
+        diff++;
+        if (diff > 1) return false;
+        if (word.length > targetWord.length) i++;
+        else if (targetWord.length > word.length) j++;
+        else { i++; j++; }
+      } else { i++; j++; }
+    }
+    diff += (word.length - i) + (targetWord.length - j);
+    return diff <= 1;
+  };
+
+  // Quản lý Lịch sử tìm kiếm gần đây trên LocalStorage
+  const RECENT_SEARCHES_KEY = 'tbk_recent_searches';
+  const getRecentSearches = () => {
+    try {
+      const data = localStorage.getItem(RECENT_SEARCHES_KEY);
+      const parsed = data ? JSON.parse(data) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
+  };
+  const saveRecentSearch = kw => {
+    const clean = (kw || '').trim();
+    if (!clean || clean.length < 2 || clean.length > 50) return;
+    try {
+      let list = getRecentSearches().filter(x => x.toLowerCase() !== clean.toLowerCase());
+      list.unshift(clean);
+      if (list.length > 5) list = list.slice(0, 5);
+      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(list));
+    } catch {}
+  };
+  const clearRecentSearches = () => {
+    try { localStorage.removeItem(RECENT_SEARCHES_KEY); } catch {}
+  };
+
+  // Thuật toán Smart Search: Multi-token + Synonyms (hỗ trợ cả cụm nhiều từ) + Relevance Scoring
+  const smartSearchProducts = rawQuery => {
+    const qNorm = removeAccents((rawQuery || '').trim());
+    if (!qNorm) return [];
+
+    let remainingQuery = qNorm;
+    const tokenGroups = [];
+
+    // 1. Bắt các cụm từ đồng nghĩa có từ 2 chữ trở lên trước (VD: "tu dinh", "keo san", "tung soi"...)
+    Object.keys(SEARCH_SYNONYMS).forEach(key => {
+      const keyNorm = removeAccents(key);
+      if (keyNorm.includes(' ') && remainingQuery.includes(keyNorm)) {
+        tokenGroups.push([keyNorm, ...SEARCH_SYNONYMS[key].map(removeAccents)]);
+        remainingQuery = remainingQuery.replace(new RegExp(keyNorm, 'g'), ' ');
+      }
+    });
+
+    // 2. Các từ đơn còn lại thì tách ra và tra từ điển bình thường (VD: "ko", "k", "cum", "kep"...)
+    const rawTokens = remainingQuery.split(/\s+/).filter(Boolean);
+    rawTokens.forEach(tok => {
+      const syns = (SEARCH_SYNONYMS[tok] || []).map(removeAccents);
+      tokenGroups.push([tok, ...syns]);
+    });
+
+    if (tokenGroups.length === 0) return [];
+
+    const results = [];
+
+    for (const p of state.products) {
+      const pNameNorm = removeAccents(p.name);
+      const pNameWords = pNameNorm.split(/\s+/).filter(Boolean);
+      const pTagsNorm = (p.tags || []).map(removeAccents);
+      const pVariants = (p.variants || []).map(v => ({ raw: v, norm: removeAccents(v) }));
+
+      let matchedAllTokens = true;
+      let score = 0;
+      let matchedVariant = null;
+
+      for (const group of tokenGroups) {
+        let groupMatched = false;
+        for (const word of group) {
+          // 1. Khớp trong tên sản phẩm (chính xác hoặc gõ nhầm nhẹ)
+          if (pNameNorm.includes(word) || pNameWords.some(w => isFuzzyWordMatch(word, w))) {
+            groupMatched = true;
+            score += 25;
+            break;
+          }
+          // 2. Khớp trong mã/tên phân loại
+          const vFound = pVariants.find(v => v.norm.includes(word));
+          if (vFound) {
+            groupMatched = true;
+            score += 30;
+            if (!matchedVariant && vFound.raw !== DEFAULT_VARIANT_LABEL) matchedVariant = vFound.raw;
+            break;
+          }
+          // 3. Khớp trong tags
+          if (pTagsNorm.some(t => t.includes(word))) {
+            groupMatched = true;
+            score += 15;
+            break;
+          }
+        }
+        if (!groupMatched) {
+          matchedAllTokens = false;
+          break;
+        }
+      }
+
+      if (!matchedAllTokens) continue;
+
+      // Điểm thưởng cho cụm từ khớp chính xác nguyên vẹn
+      if (pNameNorm.includes(qNorm)) score += 50;
+      if (pNameNorm.startsWith(qNorm)) score += 30;
+
+      // Bắt chính xác phân loại nếu người dùng gõ mã (ví dụ "x94")
+      const exactVariantMatch = pVariants.find(v => v.norm.includes(qNorm));
+      if (exactVariantMatch && exactVariantMatch.raw !== DEFAULT_VARIANT_LABEL) {
+        score += 45;
+        matchedVariant = exactVariantMatch.raw;
+      }
+
+      // Trừ điểm nếu hết hàng để ưu tiên hàng còn lên trước
+      if (isProductOutOfStock(p)) score -= 1000;
+
+      results.push({ product: p, score, matchedVariant });
+    }
+
+    return results.sort((a, b) => b.score - a.score);
+  };
+
+  const openHeaderSearch = () => {
+    const header = document.getElementById('siteHeader');
+    if (!header) return;
+    header.classList.add('search-open');
+    const input = document.getElementById('headerSearchInput');
+    if (input) {
+      input.focus();
+      renderSearchDropdown(input.value);
+    }
+  };
+
+  const closeHeaderSearch = () => {
+    const header = document.getElementById('siteHeader');
+    if (header) header.classList.remove('search-open');
+    const input = document.getElementById('headerSearchInput');
+    if (input) input.blur();
+  };
+
+  const renderSearchDropdown = query => {
+    const container = document.getElementById('searchDropdownContent');
+    if (!container) return;
+    const rawQ = (query || '').trim();
+
+    if (!rawQ) {
+      const recent = getRecentSearches();
+      container.innerHTML = `
+        <div class="search-prompt-state">
+          ${recent.length > 0 ? `
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+              <span style="font-size:12px; font-weight:700; color:var(--text);">Tìm kiếm gần đây</span>
+              <button id="clearRecentBtn" type="button" style="background:none; border:none; font-size:11.5px; color:var(--text-muted); cursor:pointer; padding:2px;">Xóa lịch sử</button>
+            </div>
+            <div class="search-prompt-tags" style="margin-bottom:14px; margin-top:2px;">
+              ${recent.map(s => `<button class="search-prompt-tag recent" data-kw="${esc(s)}" type="button">${esc(s)}</button>`).join('')}
+            </div>
+          ` : ''}
+          <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-align:center; margin-bottom:2px;">Gợi ý cho bạn</div>
+          <div class="search-prompt-tags">
+            <button class="search-prompt-tag" data-kw="Mi X55" type="button">Mi X55</button>
+            <button class="search-prompt-tag" data-kw="Mi X155" type="button">Mi X155</button>
+            <button class="search-prompt-tag" data-kw="Keo Giver 5ml" type="button">Keo Giver 5ml</button>
+            <button class="search-prompt-tag" data-kw="Nhíp Gắn Mi" type="button">Nhíp Gắn Mi</button>
+            <button class="search-prompt-tag" data-kw="Kích Mí Mlen" type="button">Kích Mí Mlen</button>
+          </div>
+        </div>`;
+      return;
+    }
+
+    if (state.productsLoading) {
+      container.innerHTML = `
+        <div style="text-align:center; padding: 30px 16px; color:var(--text-muted); font-size:13px;">
+          <div class="inv-dot" style="width:24px;height:24px;border-width:2px;margin:0 auto 10px;"></div>
+          Đang tải dữ liệu sản phẩm...
+        </div>`;
+      return;
+    }
+
+    const matches = smartSearchProducts(rawQ);
+
+    if (matches.length === 0) {
+      container.innerHTML = `
+        <div class="search-empty-state">
+          <div>Không tìm thấy sản phẩm nào khớp với "<b>${esc(rawQ)}</b>"</div>
+          <div style="font-size:12px; margin-top:6px; opacity:0.8;">Bạn kiểm tra lại từ khóa hoặc thử tìm kiếm từ khác nhé!</div>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = matches.map(({ product: p, matchedVariant }) => {
+      const isOOS = isProductOutOfStock(p);
+      const thumbContent = p.image 
+        ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy">` 
+        : esc(p.emoji);
+
+      const qNorm = removeAccents(rawQ);
+      const showVariantBadge = matchedVariant && matchedVariant !== DEFAULT_VARIANT_LABEL && !removeAccents(p.name).includes(qNorm);
+
+      return `
+        <div class="search-item" data-id="${esc(p.name)}" ${matchedVariant ? `data-variant="${esc(matchedVariant)}"` : ''}>
+          <div class="search-item-thumb ${isOOS ? 'oos' : ''}" style="background:${esc(p.color || '#fdfafc')}">
+            ${thumbContent}
+            ${isOOS ? '<div class="search-oos-badge">Hết hàng</div>' : ''}
+          </div>
+          <div class="search-item-info">
+            <div class="search-item-name">${esc(p.name)}</div>
+            <div class="search-item-meta">
+              <div class="search-item-price" data-price-id="${esc(p.name)}">${priceHTML(p.price)}</div>
+              ${showVariantBadge ? `<span class="search-item-tag">${esc(matchedVariant)}</span>` : ''}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  };
+
+  const setupHeaderSearch = () => {
+    const searchOpenBtn = document.getElementById('searchOpenBtn');
+    const searchCloseBtn = document.getElementById('headerSearchClose');
+    const searchClearBtn = document.getElementById('headerSearchClear');
+    const searchInput = document.getElementById('headerSearchInput');
+    const searchBackdrop = document.getElementById('searchBackdrop');
+    const searchDropdownContent = document.getElementById('searchDropdownContent');
+
+    if (searchOpenBtn) searchOpenBtn.addEventListener('click', openHeaderSearch);
+    if (searchCloseBtn) searchCloseBtn.addEventListener('click', closeHeaderSearch);
+    if (searchBackdrop) searchBackdrop.addEventListener('click', closeHeaderSearch);
+
+    if (searchInput) {
+      searchInput.addEventListener('input', e => {
+        const val = e.target.value;
+        if (searchClearBtn) searchClearBtn.classList.toggle('show', val.length > 0);
+        renderSearchDropdown(val);
+      });
+
+      searchInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const firstItem = searchDropdownContent?.querySelector('.search-item');
+          if (firstItem) {
+            saveRecentSearch(searchInput.value);
+            const pId = firstItem.dataset.id;
+            const vName = firstItem.dataset.variant || null;
+            closeHeaderSearch();
+            go('detail', { productId: pId, variant: vName });
+          }
+        }
+      });
+    }
+
+    if (searchClearBtn) {
+      searchClearBtn.addEventListener('click', () => {
+        if (searchInput) {
+          searchInput.value = '';
+          searchInput.focus();
+        }
+        searchClearBtn.classList.remove('show');
+        renderSearchDropdown('');
+      });
+    }
+
+    if (searchDropdownContent) {
+      searchDropdownContent.addEventListener('click', e => {
+        const clearBtn = e.target.closest('#clearRecentBtn');
+        if (clearBtn) {
+          e.stopPropagation();
+          clearRecentSearches();
+          renderSearchDropdown('');
+          return;
+        }
+
+        const promptTag = e.target.closest('.search-prompt-tag');
+        if (promptTag) {
+          const kw = promptTag.dataset.kw;
+          if (kw && searchInput) {
+            searchInput.value = kw;
+            if (searchClearBtn) searchClearBtn.classList.add('show');
+            renderSearchDropdown(kw);
+            searchInput.focus();
+          }
+          return;
+        }
+
+        const item = e.target.closest('.search-item');
+        if (item) {
+          if (searchInput?.value) saveRecentSearch(searchInput.value);
+          const pId = item.dataset.id;
+          const vName = item.dataset.variant || null;
+          closeHeaderSearch();
+          return go('detail', { productId: pId, variant: vName });
+        }
+      });
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeHeaderSearch();
+    });
+  };
+  setupHeaderSearch();
 
   const renderHome = () => {
     let html = `
@@ -926,8 +1404,13 @@
         ${isOOS ? `<div class="oos-badge">Hết hàng</div>` : ''}
       </div>
       <div>
-        <h2>${esc(p.name)}</h2>
-        <div class="price-big" data-price-id="${esc(p.name)}">${priceHTML(p.price)}</div>
+        <h2 style="margin:0 0 10px; font-size:22px; letter-spacing:-0.5px; line-height:1.3;">${esc(p.name)}</h2>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:16px;">
+          <div class="price-big" style="margin-bottom:0;" data-price-id="${esc(p.name)}">${priceHTML(p.price)}</div>
+          <button id="copyShareLinkBtn" type="button" style="background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:6px 12px; font-size:12px; font-weight:600; color:var(--text-muted); display:flex; align-items:center; gap:5px; flex-shrink:0; transition:all 0.15s; cursor:pointer;" title="Sao chép link phân loại này gửi khách">
+            🔗 Sao chép link
+          </button>
+        </div>
         ${descHtml}
     `;
 
@@ -939,6 +1422,11 @@
     if (!isSingleVariant) {
       const previewImg = state.selectedVariant ? variantImage(p, state.selectedVariant) : null;
       const isVariantOos = state.selectedVariant ? getStock(p.name, state.selectedVariant) <= 0 : false;
+      const stockBadgeHTML = state.selectedVariant ? `
+        <span class="preview-stock ${maxStock <= LOW_STOCK_THRESHOLD ? 'low' : ''} ${isVariantOos ? 'oos' : ''}">
+          ${isVariantOos ? 'SL: 0' : `SL: ${maxStock}`}
+        </span>` : '';
+
       html += `
         <div class="variant-group">
           <div class="label">Mã sản phẩm</div>
@@ -949,10 +1437,18 @@
                 ${isVariantOos ? `<div class="preview-oos-badge">Hết hàng</div>` : ''}
               </div>
               <div class="preview-text">
-                <b>${esc(state.selectedVariant)}${isVariantOos ? '<span class="oos-tag-inline">(Hết hàng)</span>' : ''}</b>
+                <div class="preview-top-row">
+                  <b>${esc(state.selectedVariant)}${isVariantOos ? '<span class="oos-tag-inline">(Hết hàng)</span>' : ''}</b>
+                  ${stockBadgeHTML}
+                </div>
                 <span>Chạm để xem ảnh sản phẩm </span>
               </div>
-            ` : `<div class="preview-empty">${state.selectedVariant ? 'Mã này chưa có ảnh riêng' : 'Chọn 1 mã bên dưới để xem ảnh ngay tại đây'}</div>`}
+            ` : `<div class="preview-empty">${state.selectedVariant ? `
+              <div class="preview-top-row">
+                <b>${esc(state.selectedVariant)}${isVariantOos ? '<span class="oos-tag-inline">(Hết hàng)</span>' : ''}</b>
+                ${stockBadgeHTML}
+              </div>
+            ` : 'Chọn 1 mã bên dưới để xem ảnh ngay tại đây'}</div>`}
           </div>
           <div class="pill-row">
             ${p.variants.map(v => {
@@ -961,13 +1457,11 @@
             }).join('')}
           </div>
         </div>`;
-    }
-
-    if (state.selectedVariant) {
+    } else {
       if (maxStock > 0) {
-        html += `<div class="stock-info ${maxStock <= LOW_STOCK_THRESHOLD ? 'low' : ''}" style="display:inline-block; margin-bottom:20px;">Còn ${maxStock} sản phẩm</div>`;
+        html += `<div class="stock-info ${maxStock <= LOW_STOCK_THRESHOLD ? 'low' : ''}" style="display:inline-block; margin-bottom:20px;">SL: ${maxStock}</div>`;
       } else {
-        html += `<div class="stock-info oos" style="display:inline-block; margin-bottom:20px;">Mã này tạm thời hết hàng</div>`;
+        html += `<div class="stock-info oos" style="display:inline-block; margin-bottom:20px;">Hết hàng</div>`;
       }
     }
 
@@ -1054,7 +1548,7 @@
       const targetImgForScroll = variantImage(p, state.selectedVariant);
       if (targetImgForScroll) {
         const targetIdx = uniqueImages.indexOf(targetImgForScroll);
-        if (targetIdx > 0) {
+        if (targetIdx >= 0) {
           track.scrollLeft = targetIdx * track.clientWidth;
           document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === targetIdx));
           updateCarouselArrows();
@@ -1128,9 +1622,39 @@
 
   // Event Delegation cho #app
   app.addEventListener('click', e => {
+    // Nút copy link nhanh để gửi cho khách
+    const copyLinkBtn = e.target.closest('#copyShareLinkBtn');
+    if (copyLinkBtn) {
+      const shareUrl = window.location.href;
+      const execCopy = text => {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          const ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+          return ok;
+        } catch { return false; }
+      };
+
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(shareUrl)
+          .then(() => toast('🔗 Đã sao chép link phân loại vào bộ nhớ tạm!'))
+          .catch(() => execCopy(shareUrl) ? toast('🔗 Đã sao chép link phân loại vào bộ nhớ tạm!') : toast('Bạn copy link trên thanh địa chỉ nhé'));
+      } else if (execCopy(shareUrl)) {
+        toast('🔗 Đã sao chép link phân loại vào bộ nhớ tạm!');
+      } else {
+        toast('Bạn copy link trên thanh địa chỉ nhé');
+      }
+      return;
+    }
+
     const card = e.target.closest('.card');
     if (card) {
-        return go('detail', { productId: card.dataset.id });
+      return go('detail', { productId: card.dataset.id });
     }
 
     const descToggle = e.target.closest('#descToggleBtn');
@@ -1175,6 +1699,17 @@
         const isFirstSelection = !state.selectedVariant;
         state.selectedVariant = pill.dataset.val;
         state.qty = 1;
+
+        // Cập nhật URL tức thì khi chọn mã
+        let newUrl = window.location.pathname;
+        if (state.productId) {
+          newUrl += `?sp=${toSlug(state.productId)}`;
+          if (state.selectedVariant && state.selectedVariant !== DEFAULT_VARIANT_LABEL) {
+            newUrl += `&ma=${toSlug(state.selectedVariant)}`;
+          }
+        }
+        history.replaceState({ view: 'detail', productId: state.productId, variant: state.selectedVariant }, '', newUrl);
+
         return renderDetail(isFirstSelection);
     }
 
@@ -1589,7 +2124,7 @@
         <p style="color:var(--text-muted); margin:0 0 8px; font-size:14px;">Mã đơn hàng của bạn:</p>
         <div style="display:inline-flex; align-items:center; gap:8px; background:var(--surface-2); padding: 8px 16px; border-radius: 999px; margin-bottom:20px;">
           <span style="color:var(--primary); font-size: 16px; font-weight:800;">${esc(state.lastOrderId)}</span>
-          <button id="copyOrderBtn" style="border:none; background:none; color:var(--text-muted); padding:2px; display:flex; align-items:center;">
+          <button id="copyOrderBtn" style="border:none; background:none; color:var(--text-muted); padding:6px 10px; display:flex; align-items:center; cursor:pointer;" title="Sao chép mã đơn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
           </button>
         </div>
@@ -1600,10 +2135,27 @@
     
     document.getElementById('continueBtn').addEventListener('click', () => go('home'));
     document.getElementById('copyOrderBtn').addEventListener('click', () => {
+      const orderId = state.lastOrderId || '';
+      const execCopy = text => {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          const ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+          return ok;
+        } catch { return false; }
+      };
+
       if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-        navigator.clipboard.writeText(state.lastOrderId)
-          .then(() => toast(`Đã sao chép mã đơn hàng: ${state.lastOrderId}`))
-          .catch(() => toast('Bạn chạm giữ để tự sao chép mã đơn giúp mình nhé'));
+        navigator.clipboard.writeText(orderId)
+          .then(() => toast(`Đã sao chép mã đơn hàng: ${orderId}`))
+          .catch(() => execCopy(orderId) ? toast(`Đã sao chép mã đơn hàng: ${orderId}`) : toast('Bạn chạm giữ để tự sao chép mã đơn giúp mình nhé'));
+      } else if (execCopy(orderId)) {
+        toast(`Đã sao chép mã đơn hàng: ${orderId}`);
       } else {
         toast('Bạn chạm giữ mã đơn để sao chép nhé');
       }
