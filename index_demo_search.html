@@ -91,9 +91,8 @@
   .card-footer-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; margin-top: auto; width: 100%; min-height: 34px; }
   .card-body .price { color: var(--primary); font-weight: 800; font-size: 16px; display: flex; flex-direction: column; justify-content: flex-end; line-height: 1.2; min-width: 0; }
   .card-body .price .price-old { font-size: 11.5px; color: var(--text-muted); font-weight: 500; text-decoration: line-through; opacity: 0.85; margin-bottom: 1px; margin-right: 0; }
-  .card-body .price .price-new { color: var(--accent); font-weight: 800; font-size: 16px; }
-  .card-stock-text { margin-left: auto; font-size: 8.5px; color: var(--text-muted); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -0.2px; flex-shrink: 0; opacity: 0.75; line-height: 1.2; padding-bottom: 1px; }
-  .card-stock-text.oos { color: #e05260; font-weight: 600; opacity: 0.95; font-size: 10px; }
+  .card-stock-text { margin-left: auto; font-size: 11px; color: var(--text-muted); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -0.2px; flex-shrink: 0; opacity: 0.85; line-height: 1.2; padding-bottom: 2px; }
+  .card-stock-text.oos { color: #e05260; font-weight: 600; opacity: 0.95; font-size: 11px; }
   .card.card-oos { animation-name: fadeUpOos; }
   .card.card-oos:hover { opacity: 0.95; }
   .oos-badge { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 72px; height: 72px; border-radius: 50%; background: rgba(0, 0, 0, 0.65); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; pointer-events: none; z-index: 6; letter-spacing: -0.2px; }
@@ -750,7 +749,7 @@
   const isProductOutOfStock = p => !state.productsLoading && getProductTotalStock(p) <= 0;
   const cardStockInlineHTML = p => {
     const stock = getProductTotalStock(p);
-    return stock <= 0 ? `<span class="card-stock-text oos">Hết hàng</span>` : `<span class="card-stock-text">SL ${stock}</span>`;
+    return stock <= 0 ? `<span class="card-stock-text oos">Hết hàng</span>` : `<span class="card-stock-text">Kho: ${stock}</span>`;
   };
 
   const fetchShopData = async () => {
@@ -1040,7 +1039,7 @@
     const clean = (kw || '').trim();
     if (!clean || clean.length < 2 || clean.length > 50) return;
     try {
-      let list = getRecentSearches().filter(x => x.toLowerCase() !== clean.toLowerCase());
+      let list = getRecentSearches().filter(x => typeof x === 'string' && x.toLowerCase() !== clean.toLowerCase());
       list.unshift(clean);
       if (list.length > 5) list = list.slice(0, 5);
       localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(list));
@@ -1063,7 +1062,7 @@
       const keyNorm = removeAccents(key);
       if (keyNorm.includes(' ') && remainingQuery.includes(keyNorm)) {
         tokenGroups.push([keyNorm, ...SEARCH_SYNONYMS[key].map(removeAccents)]);
-        remainingQuery = remainingQuery.replace(new RegExp(keyNorm, 'g'), ' ');
+        remainingQuery = remainingQuery.split(keyNorm).join(' ');
       }
     });
 
@@ -1424,7 +1423,7 @@
       const isVariantOos = state.selectedVariant ? getStock(p.name, state.selectedVariant) <= 0 : false;
       const stockBadgeHTML = state.selectedVariant ? `
         <span class="preview-stock ${maxStock <= LOW_STOCK_THRESHOLD ? 'low' : ''} ${isVariantOos ? 'oos' : ''}">
-          ${isVariantOos ? 'SL: 0' : `SL: ${maxStock}`}
+          ${isVariantOos ? 'Kho: 0' : `Kho: ${maxStock}`}
         </span>` : '';
 
       html += `
@@ -1459,7 +1458,7 @@
         </div>`;
     } else {
       if (maxStock > 0) {
-        html += `<div class="stock-info ${maxStock <= LOW_STOCK_THRESHOLD ? 'low' : ''}" style="display:inline-block; margin-bottom:20px;">SL: ${maxStock}</div>`;
+        html += `<div class="stock-info ${maxStock <= LOW_STOCK_THRESHOLD ? 'low' : ''}" style="display:inline-block; margin-bottom:20px;">Kho: ${maxStock}</div>`;
       } else {
         html += `<div class="stock-info oos" style="display:inline-block; margin-bottom:20px;">Hết hàng</div>`;
       }
