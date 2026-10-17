@@ -3,14 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Toboko - Shop Mi Giả Chính Hãng</title>
+<title>Toboko - Shop Mi Giả Xinh Chính Hãng</title>
+
+<!-- SEO Meta Tags -->
+<meta name="description" content="Toboko Official Store chuyên mi giả MUSE cao cấp cho thợ makeup và cá nhân. Đầy đủ mi cụm mã X, mi nâu mã B, mi gân trong, keo The Giver. Giá sỉ tự động từ 5 hộp.">
+<meta name="keywords" content="mi giả muse, mi muse, mi cụm đen, mi cụm nâu, mi gân trong, mi gân tàng hình, mi douyin, keo dán mi the giver, keo muse, keo dán mi không cay, nhíp gắp mi, nước tháo mi, toboko store, shop mi giả xinh">
+<meta name="author" content="Toboko Official Store">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://tobokostore.pro.vn/">
+<meta name="theme-color" content="#8B2FA0">
+
+<!-- Open Graph / Facebook / Zalo / Messenger -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://tobokostore.pro.vn/">
+<meta property="og:title" content="Toboko - Shop Mi Giả Xinh Chính Hãng">
+<meta property="og:description" content="Toboko Official Store chuyên mi giả MUSE cao cấp cho thợ makeup và cá nhân. Đầy đủ mi cụm mã X, mi nâu mã B, mi gân trong, keo The Giver. Giá sỉ tự động từ 5 hộp.">
+<meta property="og:image" content="https://tobokostore.pro.vn/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Toboko Store - Shop Mi Giả Xinh Chính Hãng">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:site_name" content="Toboko Official Store">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://tobokostore.pro.vn/">
+<meta name="twitter:title" content="Toboko - Shop Mi Giả Xinh Chính Hãng">
+<meta name="twitter:description" content="Toboko Official Store chuyên mi giả MUSE cao cấp cho thợ makeup và cá nhân. Đầy đủ mi cụm mã X, mi nâu mã B, mi gân trong, keo The Giver. Giá sỉ tự động từ 5 hộp.">
+<meta name="twitter:image" content="https://tobokostore.pro.vn/og-image.jpg">
+
+<!-- Favicon & Icons -->
 <link rel="icon" type="image/x-icon" href="favicon.ico">
 <link rel="icon" type="image/png" sizes="192x192" href="favicon-192x192.png">
 <link rel="icon" type="image/png" sizes="48x48" href="favicon-48x48.png">
 <link rel="apple-touch-icon" href="favicon-192x192.png">
+
+<!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Structured Data (Schema.org JSON-LD for Google Search) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "OnlineStore",
+  "name": "Toboko Official Store",
+  "alternateName": "Shop Mi Giả Toboko",
+  "url": "https://tobokostore.pro.vn/",
+  "logo": "https://tobokostore.pro.vn/favicon-192x192.png",
+  "image": "https://tobokostore.pro.vn/og-image.jpg",
+  "description": "Toboko Official Store chuyên phân phối dòng mi giả MUSE cao cấp cho thợ makeup chuyên nghiệp và cá nhân. Đầy đủ mi cụm mã X, tone nâu mã B, mi gân trong tàng hình và keo dán mi The Giver.",
+  "priceRange": "₫₫",
+  "currenciesAccepted": "VND",
+  "paymentAccepted": "Cash, Bank Transfer"
+}
+</script>
 <style>
   :root {
     --bg: #fbf6ff;             
@@ -1325,6 +1373,7 @@
   setupHeaderSearch();
 
   const renderHome = () => {
+    document.title = 'Toboko - Shop Mi Giả Xinh Chính Hãng';
     let html = `
       <div class="hero"><h1>Dành cho bạn</h1><p>Hơn 300+ mã mi giả và phụ kiện làm đẹp.</p></div>
       <div class="wholesale-notice"><b>Mẹo nhỏ cho bạn:</b> <br>Giá sỉ tự động và miễn phí ship cho đơn hàng từ 5 sản phẩm.</div>
@@ -1371,6 +1420,15 @@
 
     const isSingleVariant = p.variants.length === 1 && p.variants[0] === DEFAULT_VARIANT_LABEL;
     if (isSingleVariant && !state.selectedVariant) state.selectedVariant = DEFAULT_VARIANT_LABEL;
+
+    let pTitle = p.name;
+    if (pTitle.toLowerCase().startsWith('mi ')) {
+      pTitle = 'Mi Giả ' + pTitle.slice(3);
+    } else if (!pTitle.toLowerCase().includes('mi')) {
+      pTitle = 'Mi Giả - ' + pTitle;
+    }
+    const activeVar = (state.selectedVariant && state.selectedVariant !== DEFAULT_VARIANT_LABEL) ? ` (${state.selectedVariant})` : '';
+    document.title = `${pTitle}${activeVar} - Toboko Store`;
 
     const maxStock = state.selectedVariant ? getStock(p.name, state.selectedVariant) : 0;
     const allOOS = !state.productsLoading && p.variants.length > 0 && p.variants.every(v => getStock(p.name, v) <= 0);
@@ -1999,6 +2057,7 @@
   // ---------- Thanh Toán ----------
   const renderCheckout = () => {
     if (state.cart.length === 0) return go('home');
+    document.title = 'Giỏ hàng & Đặt hàng - Toboko Store';
     let rawSubtotal = 0;
     
     let html = `
@@ -2094,6 +2153,7 @@
   });
 
   const renderSuccess = () => {
+    document.title = 'Đặt hàng thành công - Toboko Store';
     let rawSubtotal = 0;
     const itemsHtml = (state.lastOrderItems || []).map(i => {
       const finalLineTotal = i.finalPrice;
