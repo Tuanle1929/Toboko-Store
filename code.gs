@@ -417,9 +417,21 @@ function doPost(e) {
 }
 
 function _handleSyncInventory(body) {
+  var cache = CacheService.getScriptCache();
+  if (cache.get('SYNC_LOCKED')) {
+    return ContentService.createTextOutput(JSON.stringify({ 
+      success: false, 
+      error: 'Tạm khóa đồng bộ 60 giây do nhập sai mã bảo mật.' 
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // Bạn có thể đổi chuỗi 'TBK_STOCK_SYNC_2026' bên dưới thành mật khẩu riêng của bạn (nhớ đổi khớp cả trong VBA Excel)
   if (body.secretKey !== 'TBK_STOCK_SYNC_2026') {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Không có quyền cập nhật tồn kho.' }))
-      .setMimeType(ContentService.MimeType.JSON);
+    cache.put('SYNC_LOCKED', '1', 60); // Tự động khóa 60 giây nếu có ai truyền sai secretKey
+    return ContentService.createTextOutput(JSON.stringify({ 
+      success: false, 
+      error: 'Không có quyền cập nhật tồn kho.' 
+    })).setMimeType(ContentService.MimeType.JSON);
   }
 
   var updates = body.updates;

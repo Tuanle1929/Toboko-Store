@@ -768,15 +768,14 @@
   };
 
   const loadInitialData = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const spSlug = (urlParams.get('sp') || '').trim().toLowerCase().slice(0, 150);
+    const maSlug = (urlParams.get('ma') || '').trim().toLowerCase().slice(0, 150);
+
     render(); 
     fetchShopData().then(ok => {
       state.productsLoading = false;
       if (!ok && !WEB_APP_URL.includes('AKfycb...')) state.productsError = true; 
-
-      // Đọc URL xem khách có đang mở link con (?sp=...&ma=...) không
-      const urlParams = new URLSearchParams(window.location.search);
-      const spSlug = (urlParams.get('sp') || '').trim().toLowerCase();
-      const maSlug = (urlParams.get('ma') || '').trim().toLowerCase();
 
       if (spSlug && state.products.length > 0) {
         // Dò tìm sản phẩm khớp slug trên URL
@@ -787,7 +786,9 @@
             const foundV = foundProd.variants.find(v => toSlug(v) === maSlug);
             if (foundV) matchedVar = foundV;
           }
-          go('detail', { productId: foundProd.name, variant: matchedVar }, false);
+          // Đặt Trang chủ làm mốc lịch sử nền để khách vuốt Back trên điện thoại sẽ lùi về Trang chủ
+          history.replaceState({ view: 'home', productId: null, variant: null }, '', window.location.pathname);
+          go('detail', { productId: foundProd.name, variant: matchedVar }, true);
           return;
         }
       }
@@ -978,13 +979,16 @@
     return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
   };
 
-  // Chuyển tên sản phẩm/phân loại thành dạng slug không dấu, ngăn cách bằng dấu gạch ngang
+  // Chuyển tên sản phẩm/phân loại thành dạng slug không dấu, giữ phân biệt dấu + và dấu chấm
   const toSlug = str => {
     return removeAccents(str)
+      .replace(/\+/g, '-plus-')
+      .replace(/[./_]/g, '-')
       .replace(/[^a-z0-9\s-]/g, '')
       .trim()
       .replace(/\s+/g, '-')
-      .replace(/-+/g, '-');
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
   };
 
   // Smart Search: Từ điển đồng nghĩa và viết tắt ngành mi Toboko
